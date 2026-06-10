@@ -2,10 +2,14 @@ import { strict as assert } from 'assert';
 import * as path from 'path';
 import { AILogic } from '../core/AILogic';
 import { LevelConfig } from '../core/LevelConfig';
+import { EntityState } from '../core/Entity';
 
 type FakeClient = {
     clientEntID: number;
     currentRoomId: number;
+    playerSpawned: boolean;
+    authoritativeCurrentHp: number;
+    entities: Map<number, any>;
     character: {
         CurrentLevel: { x: number; y: number };
     };
@@ -15,6 +19,11 @@ function createPlayer(x: number, y: number, roomId: number, entityId: number = 3
     return {
         clientEntID: entityId,
         currentRoomId: roomId,
+        playerSpawned: true,
+        authoritativeCurrentHp: 1000,
+        entities: new Map<number, any>([
+            [entityId, { id: entityId, isPlayer: true, entState: EntityState.ACTIVE, dead: false, hp: 1000 }]
+        ]),
         character: {
             CurrentLevel: { x, y }
         }
@@ -145,6 +154,61 @@ function testBossAggroRequiresKnownSameRoom(): void {
     );
 }
 
+function testBossIgnoresDeadPlayerAndClearsAggroTarget(): void {
+    const player = createPlayer(30, 0, 1);
+    player.authoritativeCurrentHp = 0;
+    player.entities.get(player.clientEntID)!.entState = EntityState.DEAD;
+    player.entities.get(player.clientEntID)!.dead = true;
+    const npc = createNpc({
+        name: 'TestBoss',
+        entRank: 'Boss',
+        aggroTargetEntityId: player.clientEntID,
+        aggroTargetToken: 99,
+        nextAttack: Date.now()
+    });
+
+    AILogic.updateNpc(npc, [player as never], 'BridgeTown');
+
+    assert.equal(npc.x, 0, 'boss-like enemies should not chase dead players');
+    assert.equal(npc.aggroTargetEntityId, 0, 'dead targets should clear boss aggro');
+    assert.equal(npc.aggroTargetToken, 0, 'dead targets should clear boss aggro token');
+    assert.equal(Number(npc.nextAttack ?? 0), 0, 'clearing a dead boss target should stop pending attacks');
+}
+
+function testPulledMobDropsDeadAggroTarget(): void {
+    const deadPlayer = createPlayer(80, 0, 1);
+    deadPlayer.authoritativeCurrentHp = 0;
+    const npc = createNpc({
+        lastCombatActivityAt: Date.now(),
+        aggroTargetEntityId: deadPlayer.clientEntID,
+        aggroTargetToken: 123,
+        nextAttack: Date.now()
+    });
+
+    AILogic.updateNpc(npc, [deadPlayer as never], 'TutorialDungeon');
+
+    assert.equal(npc.x, 0, 'pulled enemies should not chase a dead aggro target');
+    assert.equal(Number(npc.aggroTargetEntityId ?? 0), 0, 'dead aggro targets should be cleared');
+    assert.equal(Number(npc.aggroTargetToken ?? 0), 0, 'dead aggro target tokens should be cleared');
+    assert.equal(Number(npc.nextAttack ?? 0), 0, 'clearing a dead aggro target should stop pending attacks');
+}
+
+function testBossClearsAggroWhenTargetRunsOutOfRadius(): void {
+    const player = createPlayer(400, 0, 1);
+    const npc = createNpc({
+        name: 'TestBoss',
+        entRank: 'Boss',
+        aggroTargetEntityId: player.clientEntID,
+        aggroTargetToken: 99
+    });
+
+    AILogic.updateNpc(npc, [player as never], 'BridgeTown');
+
+    assert.equal(npc.x, 0, 'boss-like enemies should not chase players outside boss aggro radius');
+    assert.equal(npc.aggroTargetEntityId, 0, 'escaped targets should clear boss aggro');
+    assert.equal(npc.aggroTargetToken, 0, 'escaped targets should clear boss aggro token');
+}
+
 function main(): void {
     ensureLevelConfigLoaded();
     testOutdoorMeleeAggroStillUsesRoomProximity();
@@ -154,6 +218,9 @@ function main(): void {
     testPulledMobKeepsHitPlayerAsTarget();
     testBossAggroUsesShorterRadius();
     testBossAggroRequiresKnownSameRoom();
+    testBossIgnoresDeadPlayerAndClearsAggroTarget();
+    testPulledMobDropsDeadAggroTarget();
+    testBossClearsAggroWhenTargetRunsOutOfRadius();
     console.log('combat_ai_regression: ok');
 }
 

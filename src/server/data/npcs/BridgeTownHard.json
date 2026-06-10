@@ -1738,5 +1738,46 @@
     "facing_left": true,
     "health_delta": 0,
     "buffs": []
+  },
+  {
+    "is_player": true,
+    "id": 5778709,
+    "name": "AlexMercer",
+    "class": "Rogue",
+    "gender": "Male",
+    "headSet": "Head03",
+    "hairSet": "MDo02",
+    "mouthSet": "M01",
+    "faceSet": "F01",
+    "hairColor": 1315860,
+    "skinColor": 16761778,
+    "shirtColor": 1644825,
+    "pantColor": 3289650,
+    "equippedGears": [
+      {
+        "gearID": 1177,
+        "tier": 1,
+        "runes": [
+          0,
+          0,
+          0
+        ],
+        "colors": [
+          7,
+          18
+        ]
+      }
+    ],
+    "x": 10520,
+    "y": 378,
+    "v": 0,
+    "team": 1,
+    "facing_left": true,
+    "level": 50,
+    "idle_reset": true,
+    "spawn_fx": false,
+    "power_id": 0,
+    "entState": 0,
+    "buffs": []
   }
 ]

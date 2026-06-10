@@ -51,6 +51,7 @@ import {
     getLevelScopeKey,
     normalizeLevelInstanceId
 } from '../core/LevelScope';
+import { markRoomBossEntity } from '../core/RoomBossState';
 import { getCharacterRuntimeLevel, getPartyRuntimeLevelForClient } from '../core/RuntimeLevel';
 import { getCraftTownHomeInstanceId } from '../utils/HomeVisitGuard';
 
@@ -1203,6 +1204,7 @@ export class LevelHandler {
         bb.writeMethod26('');
         const payload = bb.toBuffer();
         const scopeKey = getLevelScopeKey(levelName, levelInstanceId);
+        markRoomBossEntity(scopeKey, bossId, roomId, bossName);
 
         for (const other of GlobalState.sessionsByToken.values()) {
             if (!other.playerSpawned || getClientLevelScope(other) !== scopeKey) {
@@ -3713,7 +3715,7 @@ export class LevelHandler {
             !LevelHandler.isDreadfoldGateUnlocked(client, currentLevel, doorId, rawTargetLevel)
         ) {
             console.log(`[Level] Open Door ${doorId} in ${currentLevel} blocked until Capstone is completed`);
-            LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.DREADFOLD_GATE_LOCKED_MESSAGE);
+            LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.DREADFOLD_GATE_LOCKED_MESSAGE, true);
             return;
         }
 
@@ -3722,7 +3724,7 @@ export class LevelHandler {
             !LevelHandler.isStoryAreaEntryUnlocked(client, currentLevel, rawTargetLevel)
         ) {
             console.log(`[Level] Open Door ${doorId} in ${currentLevel} blocked until the required story area mission is claimed`);
-            LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.LOCKED_STORY_AREA_ENTRY_MESSAGE);
+            LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.LOCKED_STORY_AREA_ENTRY_MESSAGE, true);
             return;
         }
 
@@ -3731,7 +3733,7 @@ export class LevelHandler {
             !LevelHandler.isDungeonEntryUnlocked(client, currentLevel, rawTargetLevel)
         ) {
             console.log(`[Level] Open Door ${doorId} in ${currentLevel} blocked until the matching dungeon quest is accepted`);
-            LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.LOCKED_DUNGEON_ENTRY_MESSAGE);
+            LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.LOCKED_DUNGEON_ENTRY_MESSAGE, true);
             return;
         }
 
@@ -3902,13 +3904,15 @@ export class LevelHandler {
         const roomId = br.readMethod9();
         LevelHandler.cacheRoomId(client, roomId);
         const bossId = br.readMethod9();
-        br.readMethod26();
+        const bossName = br.readMethod26();
         br.readMethod9();
         br.readMethod26();
         for (const other of LevelHandler.forLevelRecipients(client, true)) {
             MissionHandler.noteDungeonCutsceneStart(other, roomId);
         }
-        noteDungeonRunBossCutscene(getClientLevelScope(client), roomId, bossId);
+        const levelScope = getClientLevelScope(client);
+        markRoomBossEntity(levelScope, bossId, roomId, bossName);
+        noteDungeonRunBossCutscene(levelScope, roomId, bossId);
 
         LevelHandler.relayToLevel(client, 0xAC, data);
     }
@@ -4320,13 +4324,14 @@ export class LevelHandler {
             ? EntityState.ACTIVE
             : entState;
         const canonicalIsDefeatState = LevelHandler.isDefeatedEntityStateValue(canonicalEntState);
+        const isActiveSelfState = isSelf && !canonicalIsDefeatState;
 
         const previousX = Number(ent.x ?? 0);
         ent.x += deltaX;
         ent.y += deltaY;
         ent.v = Number(ent.v ?? 0) + deltaVX;
         ent.entState = canonicalEntState;
-        ent.dead = canonicalIsDefeatState ? true : Boolean(ent.dead);
+        ent.dead = canonicalIsDefeatState ? true : isActiveSelfState ? false : Boolean(ent.dead);
         ent.facingLeft = flags.bLeft;
         ent.bRunning = flags.bRunning;
         ent.bJumping = flags.bJumping;
@@ -4340,7 +4345,7 @@ export class LevelHandler {
             levelEntity.y = ent.y;
             levelEntity.v = ent.v;
             levelEntity.entState = canonicalEntState;
-            levelEntity.dead = canonicalIsDefeatState ? true : Boolean(levelEntity.dead);
+            levelEntity.dead = canonicalIsDefeatState ? true : isActiveSelfState ? false : Boolean(levelEntity.dead);
             levelEntity.facingLeft = flags.bLeft;
             levelEntity.bRunning = flags.bRunning;
             levelEntity.bJumping = flags.bJumping;

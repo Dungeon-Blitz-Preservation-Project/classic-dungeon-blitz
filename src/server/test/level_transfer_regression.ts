@@ -1280,6 +1280,28 @@ function testLockedDungeonDoorReportsLockedAndDoesNotOpen(): void {
     });
 }
 
+function testLockedDungeonDoorClearsStaleTransferTarget(): void {
+    const client = createClient();
+    client.currentLevel = 'CemeteryHill';
+    client.clientEntID = 451;
+    client.lastDoorId = 2;
+    client.lastDoorTargetLevel = 'BridgeTown';
+    client.mountTransferGraceUntil = Date.now() + 5000;
+    client.character = createCharacter('HillRunner');
+    client.character.CurrentLevel = { name: 'CemeteryHill', x: 12000, y: 900 };
+
+    LevelHandler.handleOpenDoor(client as never, createOpenDoorPacket(209));
+
+    assert.equal(client.lastDoorId, -1);
+    assert.equal(client.lastDoorTargetLevel, '');
+    assert.equal(client.mountTransferGraceUntil, 0);
+    assert.equal(
+        client.sentPackets.some((packet: { id: number }) => packet.id === 0x2E),
+        false,
+        'locked dungeon door must not leave a stale enter-world target behind'
+    );
+}
+
 async function testLockedDungeonTransferRequestIsBlocked(): Promise<void> {
     const client = createClient();
     client.token = 3001;
@@ -2987,6 +3009,7 @@ async function main(): Promise<void> {
         await testDreadValhavenGateTransferUsesDoorPortalSpawn();
         await testDreadValhavenGateTransferRecoversFromCurrentLevelEcho();
         testLockedDungeonDoorReportsLockedAndDoesNotOpen();
+        testLockedDungeonDoorClearsStaleTransferTarget();
         await testLockedDungeonTransferRequestIsBlocked();
         await testPartyTeleportCanJoinLockedDungeonTransfer();
 
