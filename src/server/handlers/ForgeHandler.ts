@@ -345,6 +345,7 @@ export class ForgeHandler {
         ForgeHandler.completionTimers.delete(timerKey);
         const didFinalizeExpiredForge = ForgeHandler.finalizeCompletedForgeIfNeeded(client.character);
         if (!didFinalizeExpiredForge) {
+            await ForgeHandler.syncCompletionState(client);
             return;
         }
 
@@ -481,8 +482,20 @@ export class ForgeHandler {
             return;
         }
 
+        const didFinalizeExpiredForge = ForgeHandler.finalizeCompletedForgeIfNeeded(client.character);
+        if (didFinalizeExpiredForge) {
+            ForgeHandler.clearCompletionTimer(client.userId, client.character.name);
+            await ForgeHandler.saveCharacter(client);
+            ForgeHandler.sendForgeResultPacket(client, forgeState);
+            return;
+        }
+
+        if (idolCost <= 0 || Number(client.character.mammothIdols ?? 0) < idolCost) {
+            return;
+        }
+
         ForgeHandler.clearCompletionTimer(client.userId, client.character.name);
-        client.character.mammothIdols = Math.max(0, Number(client.character.mammothIdols ?? 0) - idolCost);
+        client.character.mammothIdols = Number(client.character.mammothIdols ?? 0) - idolCost;
         ForgeHandler.sendPremiumPurchase(client, 'Forge Speed-Up', idolCost);
 
         forgeState.ReadyTime = 0;

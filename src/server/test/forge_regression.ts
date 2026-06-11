@@ -18,6 +18,8 @@ type FakeClient = {
     character: Character;
     characters: Character[];
     sentPackets: SentPacket[];
+    socket: { destroyed: boolean };
+    authenticated: boolean;
     sendBitBuffer(id: number, bb: BitBuffer): void;
 };
 
@@ -64,6 +66,8 @@ function createClient(): FakeClient {
         character,
         characters: [character],
         sentPackets,
+        socket: { destroyed: false },
+        authenticated: true,
         sendBitBuffer(id: number, bb: BitBuffer): void {
             sentPackets.push({ id, payload: bb.toBuffer() });
         }
@@ -190,6 +194,48 @@ async function withPatchedRandom<T>(values: number[], fn: () => Promise<T>): Pro
     }
 }
 
+async function withMockedDateNow<T>(nowMs: number, fn: (setNowMs: (nextNowMs: number) => void) => Promise<T>): Promise<T> {
+    const originalNow = Date.now;
+    let currentNowMs = nowMs;
+
+    Date.now = () => currentNowMs;
+
+    try {
+        return await fn((nextNowMs: number) => {
+            currentNowMs = nextNowMs;
+        });
+    } finally {
+        Date.now = originalNow;
+    }
+}
+
+async function withCapturedTimers<T>(fn: (callbacks: Array<() => void>, delays: number[]) => Promise<T>): Promise<T> {
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+    const callbacks: Array<() => void> = [];
+    const delays: number[] = [];
+
+    (global as any).setTimeout = (callback: () => void, delay?: number) => {
+        callbacks.push(callback);
+        delays.push(Number(delay ?? 0));
+        return {
+            unref(): void {
+                return;
+            }
+        };
+    };
+    (global as any).clearTimeout = () => {
+        return;
+    };
+
+    try {
+        return await fn(callbacks, delays);
+    } finally {
+        global.setTimeout = originalSetTimeout;
+        global.clearTimeout = originalClearTimeout;
+    }
+}
+
 async function testStartForgeConsumesInputsAndQueuesState(): Promise<void> {
     const client = createClient();
     const now = Math.floor(Date.now() / 1000);
@@ -280,6 +326,56 @@ async function testForgeSpeedupCompletesImmediatelyAndSendsResultPacket(): Promi
     assert.equal(decoded.usedlist, 1 << 1);
     assert.equal(decoded.rollA, Number(client.character.magicForge?.forge_roll_a ?? 0));
     assert.equal(decoded.rollB, Number(client.character.magicForge?.forge_roll_b ?? 0));
+}
+
+async function testForgeSpeedupRejectsZeroCostBeforeReady(): Promise<void> {
+    const client = createClient();
+    client.character.magicForge = {
+        stats_by_building: { '2': 5 },
+        primary: CharmID.Trog01,
+        secondary: 2,
+        secondary_tier: 2,
+        usedlist: 1 << 1,
+        ReadyTime: Math.floor(Date.now() / 1000) + 300,
+        forge_roll_a: 0,
+        forge_roll_b: 0,
+        is_extended_forge: false
+    };
+
+    await withMockedCharacterSave(async () => {
+        await ForgeHandler.handleForgeSpeedUpPacket(client as never, createForgeSpeedupPacket(0));
+    });
+
+    assert.equal(client.character.mammothIdols, 20);
+    assert.notEqual(client.character.magicForge?.ReadyTime, 0);
+    assert.equal(client.sentPackets.some((packet) => packet.id === 0xCD), false, 'free speedup should not complete a still-running forge');
+    assert.equal(client.sentPackets.some((packet) => packet.id === 0xB5), false, 'free speedup should not emit an idol purchase');
+}
+
+async function testForgeSpeedupZeroCostAfterReadySendsCompletedResult(): Promise<void> {
+    const client = createClient();
+    client.character.magicForge = {
+        stats_by_building: { '2': 5 },
+        primary: CharmID.Trog01,
+        secondary: 2,
+        secondary_tier: 2,
+        usedlist: 1 << 1,
+        ReadyTime: Math.floor(Date.now() / 1000) - 1,
+        forge_roll_a: 0,
+        forge_roll_b: 0,
+        is_extended_forge: false
+    };
+
+    await withMockedCharacterSave(async () =>
+        withPatchedRandom([0.25, 0.5], async () => {
+            await ForgeHandler.handleForgeSpeedUpPacket(client as never, createForgeSpeedupPacket(0));
+        })
+    );
+
+    assert.equal(client.character.mammothIdols, 20);
+    assert.equal(client.character.magicForge?.ReadyTime, 0);
+    assert.equal(client.sentPackets.some((packet) => packet.id === 0xB5), false);
+    assert.ok(client.sentPackets.find((packet) => packet.id === 0xCD), 'expired zero-cost speedup should only push the ready forge result');
 }
 
 async function testCollectForgeCharmAwardsCharmAndCraftXp(): Promise<void> {
@@ -403,15 +499,59 @@ async function testSyncCompletionStateFinalizesExpiredForgeRolls(): Promise<void
     assert.equal(client.sentPackets.length, 0, 'offline completion sync should not emit live forge packets');
 }
 
+async function testScheduledForgeCompletionRearmsWhenTimerFiresBeforeReadySecond(): Promise<void> {
+    const client = createClient();
+    client.character.magicForge = {
+        stats_by_building: { '2': 5 },
+        primary: CharmID.Trog01,
+        secondary: 2,
+        secondary_tier: 2,
+        usedlist: 1 << 1,
+        ReadyTime: 1001,
+        forge_roll_a: 0,
+        forge_roll_b: 0,
+        is_extended_forge: false
+    };
+
+    await withMockedDateNow(1_000_999, async (setNowMs) =>
+        withCapturedTimers(async (callbacks, delays) =>
+            withMockedCharacterSave(async () =>
+                withPatchedRandom([0.1, 0.2], async () => {
+                    await ForgeHandler.syncCompletionState(client as never);
+                    assert.equal(callbacks.length, 1);
+                    assert.ok(delays[0] < 10, 'initial timer can land before the ReadyTime second boundary');
+
+                    callbacks[0]!();
+                    await new Promise((resolve) => setImmediate(resolve));
+
+                    assert.equal(client.character.magicForge?.ReadyTime, 1001);
+                    assert.equal(client.sentPackets.some((packet) => packet.id === 0xCD), false);
+                    assert.equal(callbacks.length, 2, 'early completion callback should re-arm instead of abandoning the forge');
+
+                    setNowMs(1_001_000);
+                    callbacks[1]!();
+                    await new Promise((resolve) => setImmediate(resolve));
+
+                    assert.equal(client.character.magicForge?.ReadyTime, 0);
+                    assert.ok(client.sentPackets.find((packet) => packet.id === 0xCD), 're-armed timer should finish and notify the client');
+                })
+            )
+        )
+    );
+}
+
 async function main(): Promise<void> {
     await testStartForgeConsumesInputsAndQueuesState();
     await testStartForgePrunesZeroCountMaterials();
     await testForgeSpeedupCompletesImmediatelyAndSendsResultPacket();
+    await testForgeSpeedupRejectsZeroCostBeforeReady();
+    await testForgeSpeedupZeroCostAfterReadySendsCompletedResult();
     await testCollectForgeCharmAwardsCharmAndCraftXp();
     await testForgeRerollPreservesTierAndUpdatesUsedlist();
     await testForgeXpConsumableAppliesCapAndRefreshesInventory();
     await testArtisanSkillAllocationUnpacksPackedNibbles();
     await testSyncCompletionStateFinalizesExpiredForgeRolls();
+    await testScheduledForgeCompletionRearmsWhenTimerFiresBeforeReadySecond();
     console.log('forge_regression: ok');
 }
 

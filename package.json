@@ -18,7 +18,7 @@
         "dev:with-discord": "concurrently -n GAME,RPC -c blue,magenta \"npm run dev\" \"npm run dev:discord-bridge\""
     },
     "devDependencies": {
-        "concurrently": "^9.2.1"
+        "concurrently": "^10.0.3"
     },
     "author": "The Minesa Studios",
     "license": "MIT"

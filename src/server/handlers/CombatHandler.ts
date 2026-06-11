@@ -1201,9 +1201,33 @@ export class CombatHandler {
             .some((copy) => Boolean(copy?.clientDefeatVerified));
     }
 
+    private static getDeadPlayerForHostileDeathRegen(levelScope: string, entity: any): Client | null {
+        const armKey = CombatHandler.getHostileDeathRegenArmKey(entity);
+        if (!armKey) {
+            return null;
+        }
+
+        for (const session of GlobalState.sessionsByToken.values()) {
+            if (!session?.character || getClientLevelScope(session) !== levelScope) {
+                continue;
+            }
+            if (CombatHandler.getDeathRegenArmKeyForPlayer(session) !== armKey) {
+                continue;
+            }
+            if (!CombatHandler.isPlayerDeadForCombat(session, levelScope)) {
+                return null;
+            }
+
+            return session;
+        }
+
+        return null;
+    }
+
     private static isDeathArmedViewerForHostile(viewer: Client, entity: any): boolean {
         return Boolean(viewer?.enemyDeathRegenArmed) &&
-            CombatHandler.getHostileDeathRegenArmKey(entity) === CombatHandler.getDeathRegenArmKeyForPlayer(viewer);
+            CombatHandler.getHostileDeathRegenArmKey(entity) === CombatHandler.getDeathRegenArmKeyForPlayer(viewer) &&
+            CombatHandler.isPlayerDeadForCombat(viewer);
     }
 
     private static setHostileDeathRegenArm(levelScope: string, entity: any, armKey: string): void {
@@ -1460,7 +1484,11 @@ export class CombatHandler {
         }
 
         const healthState = CombatHandler.resolveHostileHealthStateAcrossCopies(levelScope, entity);
-        const deathRegenArmed = CombatHandler.isHostileDeathRegenArmed(entity);
+        const deathRegenArmKey = CombatHandler.getHostileDeathRegenArmKey(entity);
+        const deathRegenArmed = deathRegenArmKey.length > 0;
+        const deadDeathRegenPlayer = deathRegenArmed
+            ? CombatHandler.getDeadPlayerForHostileDeathRegen(levelScope, entity)
+            : null;
         const zeroHpOrDead = Boolean(healthState) &&
             (CombatHandler.isEntityDead(entity) || healthState!.currentHp <= 0);
         const verifiedDefeat = deathRegenArmed &&
@@ -1468,7 +1496,7 @@ export class CombatHandler {
         if (
             !healthState ||
             healthState.currentHp >= healthState.maxHp ||
-            (zeroHpOrDead && (!deathRegenArmed || verifiedDefeat))
+            (zeroHpOrDead && (!deadDeathRegenPlayer || verifiedDefeat))
         ) {
             CombatHandler.logBossRegen('boss-regen-skip', levelScope, entity, {
                 reason: !healthState
@@ -1486,6 +1514,19 @@ export class CombatHandler {
             }, CombatHandler.BOSS_REGEN_LOG_THROTTLE_MS, nowMs);
             return;
         }
+
+        if (deathRegenArmed && !deadDeathRegenPlayer) {
+            CombatHandler.clearHostileDeathRegenArm(levelScope, entity, deathRegenArmKey);
+            CombatHandler.logBossRegen('boss-regen-skip', levelScope, entity, {
+                reason: 'death-player-alive',
+                currentHp: healthState.currentHp,
+                maxHp: healthState.maxHp,
+                healthDelta: CombatHandler.getNpcHealthDelta(entity),
+                roomId: Math.round(Number(entity?.roomId ?? -1))
+            }, 0, nowMs);
+            return;
+        }
+
         if (CombatHandler.hasLivingHostileAggroTarget(levelScope, entity)) {
             CombatHandler.logBossRegen('boss-regen-skip', levelScope, entity, {
                 reason: 'living-aggro-target',
