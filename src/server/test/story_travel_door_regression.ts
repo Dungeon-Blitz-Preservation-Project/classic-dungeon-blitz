@@ -15,6 +15,7 @@ type SentPacket = {
 type FakeClient = {
     currentLevel: string;
     currentRoomId: number;
+    entryLevel?: string;
     levelInstanceId: string;
     playerSpawned: boolean;
     mountTransferGraceUntil: number;
@@ -50,6 +51,14 @@ type DirectTravelDoorCase = {
 type DungeonDoorCase = {
     currentLevel: string;
     doorId: number;
+    dungeonTarget: string;
+};
+
+type QuestLockedDungeonDoorCase = {
+    label: string;
+    currentLevel: string;
+    doorId: number;
+    missionId: MissionID;
     dungeonTarget: string;
 };
 
@@ -126,7 +135,46 @@ const DUNGEON_DOOR_CASES: DungeonDoorCase[] = [
     { currentLevel: 'JadeCityHard', doorId: 111, dungeonTarget: 'JC_Mission11Hard' }
 ];
 
+const QUEST_LOCKED_DUNGEON_DOOR_CASES: QuestLockedDungeonDoorCase[] = [
+    {
+        label: 'Mystery of the Yornak',
+        currentLevel: 'SwampRoadNorth',
+        doorId: 102,
+        missionId: MissionID.SlayYornak,
+        dungeonTarget: 'SRN_Mission2'
+    },
+    {
+        label: 'Dereliction of Duty',
+        currentLevel: 'BridgeTown',
+        doorId: 104,
+        missionId: MissionID.DerelictionOfDuty,
+        dungeonTarget: 'BT_Mission4'
+    },
+    {
+        label: 'Abandoned Armory',
+        currentLevel: 'OldMineMountain',
+        doorId: 104,
+        missionId: MissionID.AbandonedArmory,
+        dungeonTarget: 'OMM_Mission4'
+    },
+    {
+        label: 'Ancient Unrest',
+        currentLevel: 'ShazariDesert',
+        doorId: 105,
+        missionId: MissionID.AncientBurialGrounds,
+        dungeonTarget: 'SD_Mission5'
+    }
+];
+
 function getRequiredDirectTravelMission(currentLevel: string, travelTarget: string): MissionID | null {
+    if (currentLevel === 'Castle' && travelTarget === 'ShazariDesert') {
+        return MissionID.IntoTheDepths;
+    }
+
+    if (currentLevel === 'CastleHard' && travelTarget === 'ShazariDesertHard') {
+        return MissionID.IntoTheDepthsHard;
+    }
+
     if (currentLevel === 'BridgeTownHard' && travelTarget === 'CemeteryHillHard') {
         return MissionID.OldHeroesNeverDieHard;
     }
@@ -345,6 +393,139 @@ function testFirstTimeDungeonDoorsUseDungeonState(): void {
     }
 }
 
+function testQuestLockedDungeonDoorsRequireAcceptedMission(): void {
+    for (const testCase of QUEST_LOCKED_DUNGEON_DOOR_CASES) {
+        const lockedClient = createClient(testCase.currentLevel, testCase.missionId, 0);
+
+        LevelHandler.handleRequestDoorState(lockedClient as never, createDoorPacket(testCase.doorId));
+        LevelHandler.handleOpenDoor(lockedClient as never, createDoorPacket(testCase.doorId));
+
+        assert.deepEqual(
+            decodeDoorStatePacket(latestPacket(lockedClient, 0x42).payload),
+            {
+                doorId: testCase.doorId,
+                state: 4,
+                targetLevel: testCase.dungeonTarget,
+                stars: 0
+            },
+            `${testCase.label} should stay locked until the NPC grants the quest`
+        );
+        assert.equal(
+            lockedClient.sentPackets.some((packet) => packet.id === 0x2E),
+            false,
+            `${testCase.label} should not send a door target before quest acceptance`
+        );
+
+        const acceptedClient = createClient(testCase.currentLevel, testCase.missionId, 1);
+
+        LevelHandler.handleRequestDoorState(acceptedClient as never, createDoorPacket(testCase.doorId));
+        LevelHandler.handleOpenDoor(acceptedClient as never, createDoorPacket(testCase.doorId));
+
+        assert.deepEqual(
+            decodeDoorStatePacket(latestPacket(acceptedClient, 0x42).payload),
+            {
+                doorId: testCase.doorId,
+                state: 2,
+                targetLevel: testCase.dungeonTarget,
+                stars: 0
+            },
+            `${testCase.label} should show the dungeon once the quest is accepted`
+        );
+        assert.deepEqual(
+            decodeDoorTargetPacket(latestPacket(acceptedClient, 0x2E).payload),
+            {
+                doorId: testCase.doorId,
+                targetLevel: testCase.dungeonTarget
+            },
+            `${testCase.label} should transfer once the quest is accepted`
+        );
+    }
+}
+
+function testDreadShazariPortalIsReturnOnlyFromNormalSide(): void {
+    const freshNormalClient = createClient('ShazariDesert', MissionID.Capstone, 3);
+
+    LevelHandler.handleRequestDoorState(freshNormalClient as never, createDoorPacket(300));
+
+    assert.deepEqual(
+        decodeDoorStatePacket(latestPacket(freshNormalClient, 0x42).payload),
+        {
+            doorId: 300,
+            state: 4,
+            targetLevel: 'ShazariDesertHard',
+            stars: 0
+        },
+        'normal Shazari Dread portal should stay locked unless it is returning from Dread Shazari'
+    );
+
+    const returningClient = createClient('ShazariDesert', MissionID.Capstone, 3);
+    returningClient.character.PreviousLevel.name = 'ShazariDesertHard';
+
+    LevelHandler.handleRequestDoorState(returningClient as never, createDoorPacket(300));
+
+    assert.deepEqual(
+        decodeDoorStatePacket(latestPacket(returningClient, 0x42).payload),
+        {
+            doorId: 300,
+            state: 1,
+            targetLevel: 'ShazariDesertHard',
+            stars: 0
+        },
+        'normal Shazari Dread portal should reopen as a return portal after entering from Dread Shazari'
+    );
+}
+
+function testShazariPortalRequiresTitusMissionAfterCapstone(): void {
+    const capstoneOnlyClient = createClient('Castle', MissionID.Capstone, 3);
+
+    LevelHandler.handleRequestDoorState(capstoneOnlyClient as never, createDoorPacket(4));
+    LevelHandler.handleOpenDoor(capstoneOnlyClient as never, createDoorPacket(4));
+
+    assert.deepEqual(
+        decodeDoorStatePacket(latestPacket(capstoneOnlyClient, 0x42).payload),
+        {
+            doorId: 4,
+            state: 4,
+            targetLevel: 'ShazariDesert',
+            stars: 0
+        },
+        'Castle portal should stay locked after Capstone until Titus starts Into the Depths'
+    );
+    assert.equal(
+        capstoneOnlyClient.sentPackets.some((packet) => packet.id === 0x2E),
+        false,
+        'Castle portal should not transfer before Into the Depths is accepted'
+    );
+
+    const acceptedClient = createClient('Castle', MissionID.Capstone, 3);
+    acceptedClient.character.missions[String(MissionID.IntoTheDepths)] = {
+        state: 1,
+        currCount: 0
+    };
+
+    LevelHandler.handleRequestDoorState(acceptedClient as never, createDoorPacket(4));
+    LevelHandler.handleOpenDoor(acceptedClient as never, createDoorPacket(4));
+
+    assert.deepEqual(
+        decodeDoorStatePacket(latestPacket(acceptedClient, 0x42).payload),
+        {
+            doorId: 4,
+            state: 1,
+            targetLevel: 'ShazariDesert',
+            stars: 0
+        },
+        'Castle portal should become travel after Titus starts Into the Depths'
+    );
+    assert.deepEqual(
+        decodeDoorTargetPacket(latestPacket(acceptedClient, 0x2E).payload),
+        {
+            doorId: 4,
+            targetLevel: 'ShazariDesert'
+        },
+        'Castle portal should transfer after Into the Depths is accepted'
+    );
+}
+
 async function main(): Promise<void> {
     ensureDataLoaded();
     testUnfinishedStoryDoorsStillEnterTheirDungeon();
@@ -352,6 +533,9 @@ async function main(): Promise<void> {
     testClaimedOldSaveStoryDoorsStayMapTravelWithoutStars();
     testDirectWorldTravelDoorsUseTravelState();
     testFirstTimeDungeonDoorsUseDungeonState();
+    testQuestLockedDungeonDoorsRequireAcceptedMission();
+    testDreadShazariPortalIsReturnOnlyFromNormalSide();
+    testShazariPortalRequiresTitusMissionAfterCapstone();
     console.log('story_travel_door_regression: ok');
 }
 

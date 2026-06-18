@@ -468,6 +468,7 @@
     {
         "MissionName": "SlayMindlessQueen",
         "MissionID": "24",
+        "PreReqMissions": "StopBroodvictor",
         "ZoneSet": "SwampRoadNorth",
         "Priority": "Dungeon",
         "ContactName": "Odem",
@@ -674,7 +675,7 @@
         "DisplayName": "Bandit Problem",
         "TrackerText": "Expel the Bandits from their camp in the woods",
         "TrackerReturn": "Introduce yourself to the Steward of Felbridge",
-        "Description": "The townsfolk shun aoutsiders, who often turn to banditry. To win their trust, you decide to tackle their bandit problem.",
+        "Description": "The townsfolk shun outsiders, who often turn to banditry. To win their trust, you decide to tackle their bandit problem.",
         "PreReqText": "Please go back and get rid of Arachnae",
         "OfferText": "Stranger, I know your type. We've no patience for you here.",
         "ActiveText": "I don't know you, but you'd best be on your way.=@I've come from the King.=@I'm here to help restore the Barony of Ellyria.=Your king has nothing to do with us.=And we've had plenty of bandits say the same story.=I don't want trouble, so go onto the woods with the others.=@There are human bandits in the woods?=Aye, you'll find plenty of your kind there.=@Not my kind.=So you say.=I'll believe it when I see it.",
@@ -2630,6 +2631,7 @@
     {
         "MissionName": "SlayMindlessQueenHard",
         "MissionID": "134",
+        "PreReqMissions": "StopBroodvictorHard",
         "ZoneSet": "SwampRoadNorthHard",
         "Priority": "Dungeon",
         "ContactName": "OdemHard",
@@ -2835,7 +2837,7 @@
         "DisplayName": "Bandit Problem",
         "TrackerText": "Expel the Bandits from their camp in the woods",
         "TrackerReturn": "Introduce yourself to the Steward of Felbridge",
-        "Description": "The townsfolk shun aoutsiders, who often turn to banditry. To win their trust, you decide to tackle their bandit problem.",
+        "Description": "The townsfolk shun outsiders, who often turn to banditry. To win their trust, you decide to tackle their bandit problem.",
         "PreReqText": "Please go back and get rid of Arachnae",
         "OfferText": "Stranger, I know your type. We've no patience for you here.",
         "ActiveText": "I don't know you, but you'd best be on your way.=@I've come from the King.=@I'm here to help restore the Barony of Ellyria.=Your king has nothing to do with us.=And we've had plenty of bandits say the same story.=I don't want trouble, so go onto the woods with the others.=@There are human bandits in the woods?=Aye, you'll find plenty of your kind there.=@Not my kind.=So you say.=I'll believe it when I see it.",

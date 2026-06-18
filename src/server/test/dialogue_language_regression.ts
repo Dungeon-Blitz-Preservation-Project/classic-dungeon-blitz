@@ -73,10 +73,10 @@ function createRoomThoughtPacket(entityId: number, text: string): Buffer {
     return bb.toBuffer();
 }
 
-function createStartSkitPacket(entityId: number, text: string): Buffer {
+function createStartSkitPacket(entityId: number, text: string, playerThought: boolean = false): Buffer {
     const bb = new BitBuffer(false);
     bb.writeMethod9(entityId);
-    bb.writeMethod15(false);
+    bb.writeMethod15(playerThought);
     bb.writeMethod26(text);
     return bb.toBuffer();
 }
@@ -405,6 +405,54 @@ function testCapstoneBossDialogueTranslatesEnemyAndPlayerLines(): void {
         {
             entityId: 1,
             text: 'Nephit, bir hayal kirikligina daha hazirlan.'
+        }
+    ]);
+}
+
+function testStartSkitPlayerThoughtFlagUsesPlayerEntity(): void {
+    const client = createFakeClient();
+    client.token = 51099;
+    client.currentLevel = 'OMM_Mission2';
+    client.levelInstanceId = '';
+    client.playerSpawned = true;
+    (client as any).clientEntID = 4200;
+    client.entities.set(701, {
+        id: 701,
+        name: 'RockHulk',
+        team: EntityTeam.ENEMY
+    });
+    client.entities.set(4200, {
+        id: 4200,
+        name: client.character.name,
+        team: 1
+    });
+
+    GlobalState.sessionsByToken.set(client.token, client as never);
+    try {
+        SocialHandler.handleStartSkit(
+            client as never,
+            createStartSkitPacket(701, 'Stone is Eternal!')
+        );
+        SocialHandler.handleStartSkit(
+            client as never,
+            createStartSkitPacket(701, "These blockheads really don't want me to get over the bridge.", true)
+        );
+    } finally {
+        GlobalState.sessionsByToken.delete(client.token);
+    }
+
+    const thoughts = client.sentPackets
+        .filter((entry) => entry.id === 0x76)
+        .map((entry) => decodeRoomThought(entry.payload));
+
+    assert.deepEqual(thoughts, [
+        {
+            entityId: 701,
+            text: 'Stone is Eternal!'
+        },
+        {
+            entityId: 4200,
+            text: "These blockheads really don't want me to get over the bridge."
         }
     ]);
 }
@@ -1899,6 +1947,7 @@ async function main(): Promise<void> {
     testSplitDungeonRoomThoughtTranslation();
     testLevelHandlerRoomThoughtUsesRecipientLanguage();
     testCapstoneBossDialogueTranslatesEnemyAndPlayerLines();
+    testStartSkitPlayerThoughtFlagUsesPlayerEntity();
     testFelbridgeMeylourRoomDialogueUsesExactTranslations();
     testFelbridgeMeylourLiveSkitSegmentsUseTranslations();
     testBridgeTownMissionsLiveSkitSegmentsUseTranslations();

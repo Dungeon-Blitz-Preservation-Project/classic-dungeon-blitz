@@ -44,10 +44,6 @@ export class EntityHandler {
     ]);
     private static readonly MOUNT_SYNC_RETRY_DELAYS_MS = [0, 300, 1200, 2500, 4000];
     private static readonly CLIENT_SPAWN_JOINER_SEED_DELAYS_MS = [2500, 4500];
-    private static readonly LEADER_AUTHORITATIVE_CLIENT_SPAWN_LEVELS = new Set<string>([
-        'GoblinRiverDungeon',
-        'GoblinRiverDungeonHard'
-    ]);
     private static readonly GOBLIN_RIVER_ROOM_SYNC_SKIP_LEVELS = new Set<string>([
         'TutorialDungeon',
         'GoblinRiverDungeon',
@@ -87,7 +83,11 @@ export class EntityHandler {
     }
 
     private static usesLeaderAuthoritativeClientSpawns(levelName: string | null | undefined): boolean {
-        return Boolean(levelName) && EntityHandler.LEADER_AUTHORITATIVE_CLIENT_SPAWN_LEVELS.has(String(levelName));
+        // Hybrid dungeon authority: while Flash still runs temporary enemy AI,
+        // server-owned DungeonInstance state chooses one canonical client-spawn
+        // actor and aliases follower duplicates to it. TODO: replace this bridge
+        // with full server-side enemy spawning and AI.
+        return LevelConfig.isDungeonLevel(levelName);
     }
 
     private static shouldSkipDungeonRoomProgressSync(levelName: string | null | undefined): boolean {

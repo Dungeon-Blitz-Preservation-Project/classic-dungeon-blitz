@@ -10176,7 +10176,7 @@
 		<ManaCost>0</ManaCost>
 		<BaseDamageMult>0</BaseDamageMult>
 		<DamageType>Fire</DamageType>
-		<SpawnedMonsters>FireBombSlow</SpawnedMonsters>
+		<SpawnedMonsters>FireBomb</SpawnedMonsters>
 		<SpawnLimit>2</SpawnLimit>
 		<SpawnDuration>15000</SpawnDuration>
 		<DisplayName>***Canavar***</DisplayName>

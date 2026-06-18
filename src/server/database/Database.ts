@@ -13,6 +13,7 @@ export interface Character {
     gold?: number;
     mammothIdols?: number;
     magicForge?: MagicForge;
+    forgeMilestones?: { [key: string]: boolean };
     buildingUpgrade?: BuildingUpgrade;
     [key: string]: any; 
 }

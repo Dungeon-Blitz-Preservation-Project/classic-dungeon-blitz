@@ -41,9 +41,8 @@ const FIREBRAND_SHOTS: FireBrandShotDef[] = [
   { name: "FlameAxeFireBrandShot8", powerID: 6146, targetMethod: "ProjectileCombo", range: 800, baseDamageMult: "1", addTargetBuff: "Scorched" },
 ];
 
-const DRAGON_SOUL_DESCRIPTION =
-  "Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.";
 const FIREBRAND_BASE_DURATION_MS = "7813";
+const FIREBRAND_BASE_DURATION_SECONDS = "7.8";
 const PERMAFROST_DOT_BUFF = [
   '\t<BuffType BuffName="ChilblainsPermafrostDot">',
   "\t\t<BuffID>739</BuffID>",
@@ -295,6 +294,45 @@ function dragonSoulSpawnDurationForRank(rank: number): string {
   return "11000";
 }
 
+function secondsLabel(milliseconds: string): string {
+  const seconds = Number(milliseconds) / 1000;
+  return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1);
+}
+
+function dragonSoulAttackBoostForRank(rank: number): string {
+  if (rank >= 8) {
+    return "30%";
+  }
+  if (rank >= 3) {
+    return "20%";
+  }
+  return "15%";
+}
+
+function dragonSoulDescriptionForRank(rank: number): string {
+  const duration = secondsLabel(dragonSoulSpawnDurationForRank(rank));
+  return `Summon a Spirit of Flame for ${duration} seconds that copies your Fire Brand shots. Grants +${dragonSoulAttackBoostForRank(rank)} attack while active.`;
+}
+
+function dragonSoulUpgradeDescriptionForRank(rank: number): string {
+  if (rank === 1) {
+    return dragonSoulDescriptionForRank(rank);
+  }
+  if (rank === 2 || rank === 6 || rank === 9) {
+    return `Dragon Soul duration increases to ${secondsLabel(dragonSoulSpawnDurationForRank(rank))} seconds.`;
+  }
+  if (rank === 3 || rank === 8) {
+    return `+${dragonSoulAttackBoostForRank(rank)} Attack Boost while active.`;
+  }
+  if (rank === 7) {
+    return "-3 Mana Cost. Dragon Soul shots deal 92% fire damage.";
+  }
+  if (rank === 10) {
+    return "Dragon Soul lasts 15 seconds, grants +30% attack, and shots deal 98% fire damage.";
+  }
+  return "";
+}
+
 function dragonSoulBuffDurationForName(buffName: string): string {
   if (buffName === "DragonSoulRank8" || buffName === "DragonSoulEffect") {
     return "15000";
@@ -303,6 +341,41 @@ function dragonSoulBuffDurationForName(buffName: string): string {
     return "13500";
   }
   return "12000";
+}
+
+function fireBrandDescriptionForRank(rank: number): string {
+  if (rank >= 8) {
+    return `For ${FIREBRAND_BASE_DURATION_SECONDS} seconds, your Fireball uses an 800-range Fire Brand shot that applies Scorched.`;
+  }
+  if (rank >= 6) {
+    return `For ${FIREBRAND_BASE_DURATION_SECONDS} seconds, party ranged attacks become Fire Brand shots that deal 50% fire damage in a 120 AoE and apply Scorched and Burned.`;
+  }
+  if (rank >= 3) {
+    return `For ${FIREBRAND_BASE_DURATION_SECONDS} seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 105 AoE and apply Scorched.`;
+  }
+  return `For ${FIREBRAND_BASE_DURATION_SECONDS} seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 90 AoE and apply Scorched.`;
+}
+
+function fireBrandUpgradeDescriptionForRank(rank: number): string {
+  switch (rank) {
+    case 1:
+      return "Fire Brand lasts 7.8 seconds and changes party ranged attacks to 90 AoE Scorched shots.";
+    case 2:
+      return "Fire Brand shots deal 100% fire damage in a 90 AoE.";
+    case 3:
+      return "Fire Brand shot AoE increases to 105.";
+    case 4:
+    case 5:
+      return "Fire Brand shots deal 100% fire damage in a 105 AoE.";
+    case 6:
+      return "Fire Brand shots apply Burned and expand to a 120 AoE.";
+    case 8:
+      return "Fireball becomes an 800-range Fire Brand shot that applies Scorched.";
+    case 10:
+      return "Fire Brand uses the 800-range Scorched Fireball shot for 7.8 seconds.";
+    default:
+      return "";
+  }
 }
 
 function patchPowerBlock(powerName: string, block: string, stats: PatchStats): string {
@@ -378,18 +451,27 @@ function patchPowerBlock(powerName: string, block: string, stats: PatchStats): s
     const buff = rank >= 8 ? "FireBrandRank8" : rank >= 6 ? "FireBrandRank6" : rank >= 3 ? "FireBrandRank3" : "FireBrandRank1";
     next = apply(next, stats, replaceTag(next, "AddTargetBuff", buff));
     next = apply(next, stats, replaceTag(next, "CoolDownTime", "20000"));
+    next = apply(next, stats, replaceTag(next, "Description", fireBrandDescriptionForRank(rank)));
+    const upgradeDescription = fireBrandUpgradeDescriptionForRank(rank);
+    if (upgradeDescription) {
+      next = apply(next, stats, replaceTag(next, "UpgradeDescription", upgradeDescription));
+    }
   } else if (/^SummonDragonSoul(?:\d+)?$/.test(powerName)) {
     stats.powerBlocks += 1;
     const rank = rankOf(powerName, "SummonDragonSoul");
     next = apply(next, stats, removeSelfBuff(next, "FireBrand", "FireBrandRank1", "FireBrandRank3", "FireBrandRank6", "FireBrandRank8"));
     next = apply(next, stats, replaceTag(next, "SpawnDuration", dragonSoulSpawnDurationForRank(rank)));
-    next = apply(next, stats, replaceTag(next, "Description", DRAGON_SOUL_DESCRIPTION));
+    next = apply(next, stats, replaceTag(next, "Description", dragonSoulDescriptionForRank(rank)));
     if (
       next.includes(
         "<UpgradeDescription>Summon a Spirit of Flame that shoots at your targets. Gain increased Damage but reduced Defense for the duration.</UpgradeDescription>",
       )
     ) {
-      next = apply(next, stats, replaceTag(next, "UpgradeDescription", DRAGON_SOUL_DESCRIPTION));
+      next = apply(next, stats, replaceTag(next, "UpgradeDescription", dragonSoulDescriptionForRank(rank)));
+    }
+    const upgradeDescription = dragonSoulUpgradeDescriptionForRank(rank);
+    if (upgradeDescription) {
+      next = apply(next, stats, replaceTag(next, "UpgradeDescription", upgradeDescription));
     }
   } else if (/^Lifethirst(?:\d+)?$/.test(powerName)) {
     stats.powerBlocks += 1;
@@ -457,7 +539,7 @@ function patchPowerBlock(powerName: string, block: string, stats: PatchStats): s
     }
   } else if (/^IceSpike(?:\d+)?$/.test(powerName)) {
     stats.powerBlocks += 1;
-    next = apply(next, stats, replaceTag(next, "ManaCost", "30"));
+    next = apply(next, stats, replaceTag(next, "ManaCost", powerName === "IceSpike10" ? "25" : "30"));
   } else if (/^MeteorROR(?:\d+)?$/.test(powerName)) {
     stats.powerBlocks += 1;
     const rank = powerName === "MeteorROR" ? 1 : rankOf(powerName, "MeteorROR");
@@ -557,7 +639,7 @@ export function patchPlayerBuffs(xml: string): { xml: string; stats: PatchStats 
 function patchPowerModBlock(modName: string, block: string, stats: PatchStats): string {
   let next = block;
   const valueByMod: Record<string, string[]> = {
-    BurnDmg: [".07", ".14", ".21", ".28", ".35"],
+    BurnDmg: [".02", ".06", ".12", ".2", ".25"],
     ChilblainsDmg: [".02", ".06", ".12", ".2", ".25"],
     DryIce: [".75", "1.5", "2.5", "3.75", "5"],
     IceCasket: ["1", "2", "3", "4", "5"],
@@ -567,8 +649,8 @@ function patchPowerModBlock(modName: string, block: string, stats: PatchStats): 
     CurseCrit: [".02", ".04", ".06", ".08", ".1"],
   };
   const descriptions: Record<string, string> = {
-    BurnDmg: "Increases Burn Damage@Burn Damage:, +7%, +14%, +21%, +28%, +35%",
-    ChilblainsDmg: "Increases Chilblains Damage@Chilblains Damage:, +4%, +12%, +24%, +40%, +50%",
+    BurnDmg: "Increases Burn Damage@Burn Damage:, +6%, +18%, +36%, +60%, +75%",
+    ChilblainsDmg: "Increases Chilblains Damage@Chilblains Damage:, +6%, +18%, +36%, +60%, +75%",
     DryIce: "Increases Ice damage based on your Expertise.@Damage (%Expertise):, 75%, 150%, 250%, 375%, 500%",
     IceCasket: "Increases Freeze Durability based on your Expertise.@Durability (%Expertise):, 100%, 200%, 300%, 400%, 500%",
     ColdHeart: "Reduces the target's healing effects.@Healing Reduction:, 10%, 20%, 30%, 40%, 50%",
@@ -621,6 +703,9 @@ function patchPowerModBlock(modName: string, block: string, stats: PatchStats): 
     next = apply(next, stats, replaceTag(next, "Description", "Bolster ghoul ranged attacks inflict Poison"));
     next = apply(next, stats, replaceTag(next, "PowerName", "Ghoul2Fireball"));
     next = apply(next, stats, replaceTag(next, "PowerValue", "Append:PoisonCloud"));
+  } else if (modName === "RuneIceSpike") {
+    stats.modBlocks += 1;
+    next = apply(next, stats, replaceTag(next, "Description", "Gain +50% Defense for 1 second during Ice Lance"));
   }
 
   const maxMatch = modName.match(/^ChilblainsMax([1-5])$/);

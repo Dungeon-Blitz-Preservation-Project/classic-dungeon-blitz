@@ -33,9 +33,10 @@ function assertBasicMageAbilities(powerXml: string, entXml: string | null, label
   assert(!commaValues(powerBlock(powerXml, "VineLance2"), "AddTargetBuff").includes("PoisonCloud"), `${label}: Vine Strike rank 2 should not poison`);
   assert(commaValues(powerBlock(powerXml, "VineLance3"), "AddTargetBuff").includes("PoisonCloud"), `${label}: Vine Strike rank 3 should poison`);
 
-  for (const powerName of ["IceSpike", "IceSpike1", "IceSpike10"]) {
+  for (const powerName of ["IceSpike", "IceSpike1"]) {
     assert.equal(tagValue(powerBlock(powerXml, powerName), "ManaCost"), "30", `${label}: ${powerName} mana cost`);
   }
+  assert.equal(tagValue(powerBlock(powerXml, "IceSpike10"), "ManaCost"), "25", `${label}: IceSpike10 mana cost`);
 
   for (const powerName of ["MeteorROR", "MeteorROR1", "MeteorROR4"]) {
     assert.equal(tagValue(powerBlock(powerXml, powerName), "RecoverTime"), "625", `${label}: ${powerName} 80% attack speed`);

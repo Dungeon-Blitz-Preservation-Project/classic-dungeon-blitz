@@ -1,6 +1,11 @@
 import { Client, clearKeepTutorialTimers, createKeepTutorialState } from '../core/Client';
 import { CharacterTemplates } from '../core/CharacterTemplates';
 import { DungeonEntryDisplay } from '../core/DungeonEntryDisplay';
+import {
+    clearStoredDungeonSnapshot,
+    getStoredDungeonSnapshot,
+    StoredDungeonSnapshot
+} from '../core/DungeonSnapshot';
 import { GameData } from '../core/GameData';
 import { BitBuffer } from '../network/protocol/bitBuffer';
 import { BitReader } from '../network/protocol/bitReader';
@@ -137,13 +142,14 @@ export class CharacterHandler {
     }
 
     private static repairUnsafeSavedDungeonLocation(character: Character): boolean {
+        let didMutate = clearStoredDungeonSnapshot(character);
         const safeReturn = LevelConfig.resolveDungeonSafeReturn(
             character.CurrentLevel?.name,
             undefined,
             character
         );
         if (!safeReturn) {
-            return false;
+            return didMutate;
         }
 
         character.CurrentLevel = {
@@ -151,7 +157,8 @@ export class CharacterHandler {
             x: safeReturn.x,
             y: safeReturn.y
         };
-        return true;
+        didMutate = true;
+        return didMutate;
     }
 
     private static isSessionStale(session: Client): boolean {
@@ -298,6 +305,27 @@ export class CharacterHandler {
         DebugLogger.logProgress('CharacterReload:missingOnDisk', client, client.character, {
             source: 'memory'
         });
+    }
+
+    private static resolveEnterWorldSpawn(
+        character: Character,
+        previousLevelName: string,
+        currentLevelName: string,
+        storedDungeonSnapshot: StoredDungeonSnapshot | null
+    ): { x: number; y: number; hasCoord: boolean } {
+        if (
+            storedDungeonSnapshot?.hasCoord &&
+            Number.isFinite(Number(storedDungeonSnapshot.x)) &&
+            Number.isFinite(Number(storedDungeonSnapshot.y))
+        ) {
+            return {
+                x: Math.round(Number(storedDungeonSnapshot.x)),
+                y: Math.round(Number(storedDungeonSnapshot.y)),
+                hasCoord: true
+            };
+        }
+
+        return LevelConfig.getSpawnCoordinates(character, previousLevelName, currentLevelName);
     }
 
     private static buildPaperDollPacket(character: Character): BitBuffer {
@@ -874,7 +902,10 @@ export class CharacterHandler {
             return;
         }
 
-        const didRepairUnsafeLocation = CharacterHandler.repairUnsafeSavedDungeonLocation(char);
+        let didRepairUnsafeLocation = CharacterHandler.repairUnsafeSavedDungeonLocation(char);
+        if (char.DungeonSnapshot !== undefined && !getStoredDungeonSnapshot(char)) {
+            didRepairUnsafeLocation = clearStoredDungeonSnapshot(char) || didRepairUnsafeLocation;
+        }
         if (didRepairUnsafeLocation) {
             client.characters = CharacterHandler.upsertCharacterList(client.characters, char);
             await db.saveCharacters(client.userId, client.characters);
@@ -890,10 +921,12 @@ export class CharacterHandler {
 
     private static sendEnterWorld(client: Client, char: Character): void {
         CharacterHandler.repairUnsafeSavedDungeonLocation(char);
+        const storedDungeonSnapshot = getStoredDungeonSnapshot(char);
 
         // Determine Level
-        const currentLevelName = char.CurrentLevel?.name || "NewbieRoad";
+        const currentLevelName = storedDungeonSnapshot?.levelName || char.CurrentLevel?.name || "NewbieRoad";
         const previousLevelName =
+            storedDungeonSnapshot?.entryLevel ||
             LevelConfig.resolveDungeonEntryLevel(
                 currentLevelName,
                 char.PreviousLevel?.name || "NewbieRoad",
@@ -901,7 +934,7 @@ export class CharacterHandler {
             ) ||
             char.PreviousLevel?.name ||
             "NewbieRoad";
-        const spawn = LevelConfig.getSpawnCoordinates(char, previousLevelName, currentLevelName);
+        const spawn = CharacterHandler.resolveEnterWorldSpawn(char, previousLevelName, currentLevelName, storedDungeonSnapshot);
         const isDungeonLevel = LevelConfig.isDungeonLevel(currentLevelName);
 
         // Generate Transfer Token
@@ -911,16 +944,21 @@ export class CharacterHandler {
         if (client.userId) {
              // For dungeon levels, try to find a party member already in the same dungeon
              // and reuse their levelInstanceId so both players share the same level scope.
-             let levelInstanceId = currentLevelName === 'CraftTown'
+             let levelInstanceId = storedDungeonSnapshot?.levelInstanceId ||
+                (currentLevelName === 'CraftTown'
                 ? getCraftTownHomeInstanceId(char)
-                : '';
-             let syncAnchorStartedAt: number | undefined = isDungeonLevel ? Date.now() : undefined;
+                : '');
+             let syncAnchorStartedAt: number | undefined = isDungeonLevel
+                ? storedDungeonSnapshot?.syncAnchorStartedAt ?? storedDungeonSnapshot?.savedAt ?? Date.now()
+                : undefined;
              let syncAnchorToken: number | undefined = isDungeonLevel ? token : undefined;
              let syncAnchorCharacterName: string | undefined = isDungeonLevel ? char.name : undefined;
-             let syncRoomId: number | undefined;
-             let syncStartedRoomIds: number[] | undefined;
-             let syncEntryLevel: string | undefined;
-             let syncQuestProgress: number | undefined;
+             let syncRoomId: number | undefined = storedDungeonSnapshot?.currentRoomId;
+             let syncStartedRoomIds: number[] | undefined = storedDungeonSnapshot
+                ? [...storedDungeonSnapshot.startedRoomIds]
+                : undefined;
+             let syncEntryLevel: string | undefined = storedDungeonSnapshot?.entryLevel;
+             let syncQuestProgress: number | undefined = storedDungeonSnapshot?.questProgress;
 
              if (isDungeonLevel) {
                  const normalizedTarget = LevelConfig.normalizeLevelName(currentLevelName);
@@ -940,10 +978,10 @@ export class CharacterHandler {
                      // Room progress replay causes null errors in the Flash client when
                      // it receives room event start packets before the level SWF is loaded.
                      // Room progress will sync naturally as the Flash client loads rooms.
-                     syncEntryLevel = LevelConfig.normalizeLevelName(other.entryLevel) || undefined;
-                     syncQuestProgress = Number.isFinite(Number(other.character.questTrackerState))
+                     syncEntryLevel = syncEntryLevel || LevelConfig.normalizeLevelName(other.entryLevel) || undefined;
+                     syncQuestProgress = syncQuestProgress ?? (Number.isFinite(Number(other.character.questTrackerState))
                          ? Math.max(0, Math.min(100, Math.round(Number(other.character.questTrackerState))))
-                         : undefined;
+                         : undefined);
                      console.log(`[EnterWorld] Syncing dungeon instance for ${char.name} with party anchor ${other.character.name} (instanceId=${levelInstanceId})`);
                      break;
                  }
@@ -969,6 +1007,9 @@ export class CharacterHandler {
                 syncRoomId,
                 syncStartedRoomIds,
                 syncEntryLevel,
+                syncEntryX: storedDungeonSnapshot?.entryHasCoord ? storedDungeonSnapshot.entryX : undefined,
+                syncEntryY: storedDungeonSnapshot?.entryHasCoord ? storedDungeonSnapshot.entryY : undefined,
+                syncEntryHasCoord: Boolean(storedDungeonSnapshot?.entryHasCoord),
                 syncQuestProgress,
                 playSessionStartedAt: Date.now()
             });
@@ -1176,6 +1217,9 @@ export class CharacterHandler {
             syncAnchorToken: client.syncAnchorToken > 0 ? client.syncAnchorToken : undefined,
             syncAnchorCharacterName: client.syncAnchorCharacterName || undefined,
             syncEntryLevel: entry.syncEntryLevel,
+            syncEntryX: entry.syncEntryX,
+            syncEntryY: entry.syncEntryY,
+            syncEntryHasCoord: entry.syncEntryHasCoord,
             syncRoomId: entry.syncRoomId,
             syncStartedRoomIds: entry.syncStartedRoomIds,
             syncQuestProgress: client.syncQuestProgress,

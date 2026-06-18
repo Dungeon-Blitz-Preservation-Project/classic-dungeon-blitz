@@ -2,7 +2,7 @@ import { strict as assert } from 'assert';
 import { BitBuffer } from '../network/protocol/bitBuffer';
 import { BitReader } from '../network/protocol/bitReader';
 import { CombatHandler } from '../handlers/CombatHandler';
-import { Entity, EntityState } from '../core/Entity';
+import { Entity, EntityState, EntityTeam } from '../core/Entity';
 import { GlobalState } from '../core/GlobalState';
 import { getClientLevelScope } from '../core/LevelScope';
 
@@ -113,6 +113,37 @@ function attachPlayer(client: FakeClient): void {
     levelMap.set(client.clientEntID, entity);
 }
 
+function attachHostileEntity(client: FakeClient, entityId: number): any {
+    const entity = {
+        id: entityId,
+        name: 'TrainingDummy',
+        displayName: 'Training Dummy',
+        isPlayer: false,
+        team: EntityTeam.ENEMY,
+        hp: 100,
+        maxHp: 100,
+        entState: EntityState.ACTIVE,
+        dead: false,
+        roomId: client.currentRoomId,
+        x: 0,
+        y: 0,
+        v: 0
+    };
+
+    client.entities.set(entityId, entity);
+    client.knownEntityIds.add(entityId);
+
+    const levelScope = getClientLevelScope(client as never);
+    let levelMap = GlobalState.levelEntities.get(levelScope);
+    if (!levelMap) {
+        levelMap = new Map<number, any>();
+        GlobalState.levelEntities.set(levelScope, levelMap);
+    }
+
+    levelMap.set(entityId, entity);
+    return entity;
+}
+
 function buildPowerHitPayload(targetId: number, sourceId: number, damage: number, powerId: number): Buffer {
     const bb = new BitBuffer(false);
     bb.writeMethod4(targetId);
@@ -123,6 +154,18 @@ function buildPowerHitPayload(targetId: number, sourceId: number, damage: number
     bb.writeMethod15(false);
     bb.writeMethod15(false);
     return bb.toBuffer();
+}
+
+function parseEntityState(payload: Buffer): { entityId: number; entState: number } {
+    const br = new BitReader(payload);
+    const entityId = br.readMethod4();
+    br.readMethod45();
+    br.readMethod45();
+    br.readMethod45();
+    return {
+        entityId,
+        entState: br.readMethod6(2)
+    };
 }
 
 function buildRespawnBroadcastPayload(entityId: number, healAmount: number, usedPotion: boolean = false): Buffer {
@@ -214,8 +257,54 @@ async function testDeathAndRespawnResendFullGearPacket(): Promise<void> {
     assert.ok(attackerRespawnView.length >= 1, 'other players should receive the victim gear resync on respawn');
 }
 
+async function testHostilePlayerDeathBroadcastsServerHpToTeammate(): Promise<void> {
+    resetGlobalState();
+
+    const victim = createClient(3, 'Victim', 2002);
+    const watcher = createClient(4, 'Watcher', 2004);
+    const hostileId = 91001;
+
+    victim.authoritativeCurrentHp = 35;
+    attachPlayer(victim);
+    attachPlayer(watcher);
+    attachHostileEntity(watcher, hostileId);
+
+    const victimEntity = victim.entities.get(victim.clientEntID);
+    victimEntity.hp = 35;
+    victimEntity.maxHp = 100;
+
+    const levelScope = getClientLevelScope(victim as never);
+    const levelVictim = GlobalState.levelEntities.get(levelScope)?.get(victim.clientEntID);
+    levelVictim.hp = 35;
+    levelVictim.maxHp = 100;
+
+    victim.knownEntityIds.add(hostileId);
+    watcher.knownEntityIds.add(victim.clientEntID);
+
+    GlobalState.sessionsByToken.set(victim.token, victim as never);
+    GlobalState.sessionsByToken.set(watcher.token, watcher as never);
+
+    await CombatHandler.handlePowerHit(
+        watcher as never,
+        buildPowerHitPayload(victim.clientEntID, hostileId, 80, 42)
+    );
+
+    assert.equal(victim.authoritativeCurrentHp, 0, 'server authoritative player HP should hit zero after lethal hostile damage');
+    assert.equal(victim.entities.get(victim.clientEntID)?.hp, 0, 'victim local entity HP should be synchronized to zero');
+    assert.equal(levelVictim?.hp, 0, 'canonical level player entity HP should be synchronized to zero');
+    assert.equal(levelVictim?.dead, true, 'canonical level player entity should be marked dead');
+
+    const watcherDeathState = watcher.sentPackets
+        .filter((packet) => packet.id === 0x07)
+        .map((packet) => parseEntityState(packet.payload))
+        .find((packet) => packet.entityId === victim.clientEntID);
+
+    assert.equal(watcherDeathState?.entState, EntityState.DEAD, 'teammate should receive the victim death state from the server');
+}
+
 async function main(): Promise<void> {
     await testDeathAndRespawnResendFullGearPacket();
+    await testHostilePlayerDeathBroadcastsServerHpToTeammate();
     console.log('player_death_gear_regression: ok');
 }
 

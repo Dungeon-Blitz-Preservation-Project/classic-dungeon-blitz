@@ -37,6 +37,7 @@ import { DebugLogger } from './core/Debug';
 import { GuildHandler } from './handlers/GuildHandler';
 import { ForgeHandler } from './handlers/ForgeHandler';
 import { discordSocialBridge } from './integrations/DiscordSocialBridge';
+import { ProjectInfo } from './core/ProjectInfo';
 import * as path from 'path';
 
 import { StaticServer } from './core/StaticServer';
@@ -52,6 +53,7 @@ MissionDialogueLoader.load(dataDir);
 NpcDialogueLoader.load(dataDir);
 DialogueTranslationLoader.load(dataDir);
 NpcLoader.load(dataDir);
+console.log(`[Startup] ${ProjectInfo.name} v${ProjectInfo.version}`);
 DebugLogger.logStartup();
 discordSocialBridge.initialize();
 

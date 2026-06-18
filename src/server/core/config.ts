@@ -4,9 +4,9 @@ import * as path from 'path';
 
 function resolveServerDataDir(): string {
     const candidates = [
-        path.resolve(__dirname, '..'),
-        path.resolve(__dirname, '../..'),
         path.resolve(process.cwd(), 'src/server'),
+        path.resolve(__dirname, '../..'),
+        path.resolve(__dirname, '..'),
         process.cwd()
     ];
 

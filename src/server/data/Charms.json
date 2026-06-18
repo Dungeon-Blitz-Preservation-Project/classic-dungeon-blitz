@@ -1061,6 +1061,6 @@
         "CharmLevel": "50",
         "PrimaryType": "CharmRemover",
         "PrimaryCost": "400",
-        "CharmSize": "10"
+        "CharmSize": "9"
     }
 ]

@@ -5,6 +5,7 @@ import { UserAccount, Character } from '../database/Database';
 import { JsonAdapter } from '../database/JsonAdapter';
 import { DebugLogger } from './Debug';
 import type { DungeonRunStats } from './DungeonRunStats';
+import { clearStoredDungeonSnapshot } from './DungeonSnapshot';
 import { LevelConfig } from './LevelConfig';
 
 const db = new JsonAdapter();
@@ -582,6 +583,8 @@ export class Client {
         if (!this.character) {
             return;
         }
+
+        clearStoredDungeonSnapshot(this.character);
 
         const safeReturn = LevelConfig.resolveDungeonSafeReturn(
             this.currentLevel || this.character.CurrentLevel?.name,

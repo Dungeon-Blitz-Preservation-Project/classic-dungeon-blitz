@@ -1157,7 +1157,7 @@
 		<CharmLevel>50</CharmLevel>
 		<PrimaryType>CharmRemover</PrimaryType>
 		<PrimaryCost>400</PrimaryCost>
-		<CharmSize>10</CharmSize>
+		<CharmSize>9</CharmSize>
 		<IconName>a_Icon_CharmRemover</IconName>
 		<Description>Bir esyadan tilsimi sokar.</Description>
 	</CharmType>

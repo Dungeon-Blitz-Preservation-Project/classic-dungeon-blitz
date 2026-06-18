@@ -70,6 +70,30 @@ export class PetHandler {
         client.sendBitBuffer(0xF2, bb);
     }
 
+    private static sendPetTrainingComplete(client: Client, petTypeId: number): void {
+        const bb = new BitBuffer(false);
+        bb.writeMethod6(Math.max(0, petTypeId), 7);
+        bb.writeMethod4(Math.floor(Date.now() / 1000));
+        client.sendBitBuffer(0xEE, bb);
+    }
+
+    private static syncPetLevelReferences(character: any, typeId: number, specialId: number, level: number): void {
+        const equipped = [
+            character?.activePet,
+            ...(Array.isArray(character?.restingPets) ? character.restingPets : [])
+        ];
+
+        for (const pet of equipped) {
+            const equippedSpecialId = Number(pet?.special_id ?? 0);
+            if (
+                Number(pet?.typeID ?? pet?.petID ?? 0) === typeId &&
+                (equippedSpecialId <= 0 || equippedSpecialId === specialId)
+            ) {
+                pet.level = level;
+            }
+        }
+    }
+
     static getActivePetRecord(character: any): any | null {
         if (!character) {
             return null;
@@ -693,8 +717,19 @@ export class PetHandler {
         const useIdols = br.readMethod15();
 
         if (!client.character) return;
+
+        const pets = PetHandler.normalizePetCollection(client.character);
+        const pet = pets.find((entry: any) =>
+            Number(entry?.typeID ?? 0) === typeID &&
+            Number(entry?.special_id ?? 0) === uniqueID
+        );
+        if (!pet) return;
+
+        const currentRank = Math.max(1, Number(pet.level ?? 1));
+        if (nextRank !== currentRank + 1 || nextRank >= PetConfig.TRAINING_GOLD_COST.length) {
+            return;
+        }
         
-        const trainTime = PetConfig.TRAINING_TIME[nextRank] || 0;
         const goldCost = PetConfig.TRAINING_GOLD_COST[nextRank] || 0;
         const idolCost = PetConfig.TRAINING_IDOL_COST[nextRank] || 0;
 
@@ -708,15 +743,12 @@ export class PetHandler {
             PetHandler.sendGoldLoss(client, goldCost);
         }
 
-        const readyAt = Math.floor(Date.now() / 1000) + trainTime;
-        
-        client.character.trainingPet = [{
-            typeID: typeID,
-            special_id: uniqueID,
-            trainingTime: readyAt
-        }];
+        pet.level = nextRank;
+        PetHandler.syncPetLevelReferences(client.character, typeID, uniqueID, nextRank);
+        client.character.trainingPet = [];
 
         await PetHandler.saveCharacter(client);
+        PetHandler.sendPetTrainingComplete(client, typeID);
     }
 
     static async handlePetTrainingCollect(client: Client, data: Buffer): Promise<void> {
@@ -746,11 +778,7 @@ export class PetHandler {
         // Update active pet if it's the one trained
         // Note: activePet stores only type/id usually, but updating level here ensures sync if stored.
         
-        client.character.trainingPet = [{
-            typeID: 0,
-            special_id: 0,
-            trainingTime: 0
-        }];
+        client.character.trainingPet = [];
 
         await PetHandler.saveCharacter(client);
         
@@ -760,11 +788,7 @@ export class PetHandler {
 
     static async handlePetTrainingCancel(client: Client, data: Buffer): Promise<void> {
         if (!client.character) return;
-        client.character.trainingPet = [{
-            typeID: 0,
-            special_id: 0,
-            trainingTime: 0
-        }];
+        client.character.trainingPet = [];
         await PetHandler.saveCharacter(client);
     }
     
@@ -785,10 +809,7 @@ export class PetHandler {
             
             await PetHandler.saveCharacter(client);
             
-            const bb = new BitBuffer();
-            bb.writeMethod6(petType, 7);
-            bb.writeMethod4(Math.floor(Date.now()/1000));
-            client.sendBitBuffer(0xEE, bb);
+            PetHandler.sendPetTrainingComplete(client, petType);
         }
     }
 
@@ -825,7 +846,7 @@ export class PetHandler {
         if (!hasPets) {
             duration = 180;
         } else {
-            duration = PetConfig.EGG_HATCH_TIMES[eggRank as 0|1|2] || 864000;
+            duration = PetConfig.getEggHatchTime(eggRank);
         }
 
         const now = Math.floor(Date.now() / 1000);

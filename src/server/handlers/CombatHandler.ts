@@ -173,6 +173,8 @@ export class CombatHandler {
     private static readonly BOSS_MELEE_AGGRO_RADIUS = 180;
     private static readonly BOSS_RANGED_AGGRO_RADIUS = 260;
     private static readonly KNOWN_ROOM_BOSS_DISPLAY_KEYS_BY_ENTITY = new Map<string, ReadonlySet<string>>([
+        ['defectormage', new Set(['princefriedrichhocke', 'princefredrichhocke'])],
+        ['defectormagehard', new Set(['princefriedrichhocke', 'princefredrichhocke'])],
         ['dreadpaladin', new Set(['dreadpaladinlothyr'])],
         ['dreadpaladin2', new Set(['dreadpaladinlothyr'])],
         ['dreadpaladin3', new Set(['dreadpaladinlothyr'])],
@@ -182,7 +184,9 @@ export class CombatHandler {
     ]);
     private static readonly KNOWN_ROOM_BOSS_DISPLAY_KEYS_BY_LEVEL = new Map<string, ReadonlySet<string>>([
         ['JC_Mission1', new Set(['imperialchampion', 'imperialcommandergrahl'])],
-        ['JC_Mission1Hard', new Set(['imperialchampionhard', 'imperialcommandergrahl', 'imperialcommandergrahlhard'])]
+        ['JC_Mission1Hard', new Set(['imperialchampionhard', 'imperialcommandergrahl', 'imperialcommandergrahlhard'])],
+        ['JC_Mission3', new Set(['defectormage', 'princefriedrichhocke', 'princefredrichhocke'])],
+        ['JC_Mission3Hard', new Set(['defectormagehard', 'princefriedrichhocke', 'princefredrichhocke'])]
     ]);
     private static readonly POWER_HIT_CLIENT_AUTHORITY_BOSS_LEVELS = new Set([
         'AC_Mission5',

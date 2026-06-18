@@ -1085,6 +1085,12 @@ async function testOdemOffersMindlessQueenFromRawNpcEntityName(): Promise<void> 
                 currCount: 1,
                 claimed: 1,
                 complete: 1
+            },
+            [String(MissionID.StopBroodvictor)]: {
+                state: 3,
+                currCount: 1,
+                claimed: 1,
+                complete: 1
             }
         },
         0
@@ -1118,11 +1124,96 @@ async function testOdemOffersMindlessQueenFromRawNpcEntityName(): Promise<void> 
     );
 }
 
+async function testOdemDoesNotOfferMindlessQueenBeforeVizierClear(): Promise<void> {
+    const client = createFakeClient(
+        'SwampRoadNorth',
+        {
+            [String(MissionID.DeliverToSwamp)]: {
+                state: 3,
+                currCount: 1,
+                claimed: 1,
+                complete: 1
+            }
+        },
+        0
+    );
+    client.character.CurrentLevel = { name: 'SwampRoadNorth', x: 24717, y: 314 };
+    client.entities.set(99024, { id: 99024, name: 'NPCOdem', characterName: 'Odem' });
+
+    await NpcHandler.handleTalkToNpc(client as never, createNpcTalkPacket(99024));
+
+    assert.equal(
+        client.character.missions[String(MissionID.SlayMindlessQueen)],
+        undefined,
+        "Odem should not offer Mindless Queen's Glade before Citadel of the Vizier is cleared"
+    );
+    assert.equal(
+        client.sentPackets.some((entry) => entry.id === 0x85),
+        false,
+        'Odem should not send a mission-added packet before the Vizier prerequisite'
+    );
+    assert.equal(
+        client.sentPackets.some((entry) => entry.id === 0x7B),
+        false,
+        'Odem should not open a mission skit before the Vizier prerequisite'
+    );
+    assert.ok(client.sentPackets.some((entry) => entry.id === 0x76), 'Odem should still be talkable as a regular NPC');
+}
+
+async function testOdemOffersMindlessQueenFromSpawnCharacterNameAfterVizierClear(): Promise<void> {
+    const client = createFakeClient(
+        'SwampRoadNorth',
+        {
+            [String(MissionID.DeliverToSwamp)]: {
+                state: 3,
+                currCount: 1,
+                claimed: 1,
+                complete: 1
+            },
+            [String(MissionID.StopBroodvictor)]: {
+                state: 3,
+                currCount: 1,
+                claimed: 1,
+                complete: 1
+            }
+        },
+        0
+    );
+    client.character.CurrentLevel = { name: 'SwampRoadNorth', x: 24717, y: 314 };
+    client.entities.set(99025, { id: 99025, name: 'NPCOdem', characterName: 'Odem' });
+
+    await NpcHandler.handleTalkToNpc(client as never, createNpcTalkPacket(99025));
+
+    assert.equal(
+        Number(client.character.missions[String(MissionID.SlayMindlessQueen)]?.state ?? 0),
+        1,
+        "Odem should offer Mindless Queen's Glade from the real spawn character name after Citadel of the Vizier"
+    );
+
+    const skitPacket = client.sentPackets.find((entry) => entry.id === 0x7B);
+    assert.ok(skitPacket, "Odem should open Mindless Queen's Glade offer dialogue after the Vizier prerequisite");
+    assert.deepEqual(
+        decodeStartSkitPacket(skitPacket!.payload),
+        {
+            npcId: 99025,
+            dialogueId: 2,
+            missionId: MissionID.SlayMindlessQueen
+        },
+        "Odem should resolve the real spawn character name to Mindless Queen's Glade"
+    );
+}
+
 async function testHardOdemOffersMindlessQueenFromRawNpcEntityName(): Promise<void> {
     const client = createFakeClient(
         'SwampRoadNorthHard',
         {
             [String(MissionID.DeliverToSwamp)]: {
+                state: 3,
+                currCount: 1,
+                claimed: 1,
+                complete: 1
+            },
+            [String(MissionID.StopBroodvictorHard)]: {
                 state: 3,
                 currCount: 1,
                 claimed: 1,
@@ -1639,6 +1730,8 @@ async function main(): Promise<void> {
     await testNewbieRoadOdemDoesNotStartBlackRoseMireQuestEarly();
     await testSwampRoadNorthStoryNpcDoesNotAssignBeforeSwampUnlock();
     await testOdemOffersMindlessQueenFromRawNpcEntityName();
+    await testOdemDoesNotOfferMindlessQueenBeforeVizierClear();
+    await testOdemOffersMindlessQueenFromSpawnCharacterNameAfterVizierClear();
     await testHardOdemOffersMindlessQueenFromRawNpcEntityName();
     await testSigginOffersUnearthingThePastBeforeDepthsTurnIn();
     await testBellaSageswordOffersIntoTheDepthsAfterCapstone();

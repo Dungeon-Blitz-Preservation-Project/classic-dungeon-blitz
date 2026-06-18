@@ -123,6 +123,28 @@ function createForgottenForgeClient(): FakeClient {
     return client;
 }
 
+function createForgottenForgeHardClient(): FakeClient {
+    const client = createFakeClient();
+    client.currentLevel = 'OMM_Mission6Hard';
+    client.levelInstanceId = 'forgotten-forge-hard-flow';
+    client.forcedDungeonCompletionScope = 'OMM_Mission6Hard#forgotten-forge-hard-flow';
+    client.character.name = 'ForgottenForgeHardTester';
+    client.character.level = 32;
+    client.character.CurrentLevel = { name: 'OMM_Mission6Hard', x: 0, y: 0 };
+    client.character.PreviousLevel = { name: 'OldMineMountainHard', x: 189, y: 1335 };
+    client.character.missions = {
+        [String(MissionID.AbandonedArmoryHard)]: {
+            state: 3,
+            currCount: 1,
+            claimed: 1,
+            complete: 1
+        }
+    };
+    client.character.questTrackerState = 100;
+    client.sentPackets.length = 0;
+    return client;
+}
+
 function createLordTillyRestClient(): FakeClient {
     const client = createFakeClient();
     client.currentLevel = 'CH_Mission4';
@@ -552,6 +574,49 @@ async function testAcceptedForgottenForgeCompletionWaitsForTurnIn(): Promise<voi
     });
 }
 
+async function testAcceptedForgottenForgeHardCompletionWaitsForTurnIn(): Promise<void> {
+    const client = createForgottenForgeHardClient();
+    client.character.missions[String(MissionID.ForgottenForgeHard)] = {
+        state: 1,
+        currCount: 0
+    };
+
+    await MissionHandler.handleSetLevelComplete(client as never, createLevelCompletePacket(100, 0, 1));
+
+    assert.equal(
+        Number(client.character.missions[String(MissionID.ForgottenForgeHard)]?.state ?? 0),
+        2,
+        'accepted dread Forgotten Forge should become ready to turn in after completion'
+    );
+    assert.equal(
+        Number(client.character.missions[String(MissionID.ForgottenForgeHard)]?.currCount ?? 0),
+        1,
+        'accepted dread Forgotten Forge should persist completed objective count'
+    );
+    assert.equal(
+        client.character.lastCompletedDungeonLevel,
+        'OMM_Mission6Hard',
+        'accepted dread Forgotten Forge should remember the hard dungeon level for turn-in repair'
+    );
+
+    const missionAdded = client.sentPackets.find((packet) => packet.id === 0x85);
+    assert.ok(missionAdded, 'accepted dread dungeon completion should sync the ready-to-turn-in mission snapshot');
+    assert.deepEqual(decodeMissionAddedPacket(missionAdded!.payload), {
+        missionId: MissionID.ForgottenForgeHard,
+        active: 0
+    });
+    assert.equal(
+        client.sentPackets.some((packet) => packet.id === 0x86),
+        true,
+        'accepted dread Forgotten Forge should emit the mission-complete notification'
+    );
+    assert.equal(
+        client.sentPackets.some((packet) => packet.id === 0x84),
+        false,
+        'accepted dread Forgotten Forge should still wait for its statue turn-in reward'
+    );
+}
+
 async function testMeyloursEmbersClaimsAdohiRewardAndPrimesGlades(): Promise<void> {
     const client = createMeyloursEmbersClient();
 
@@ -871,6 +936,7 @@ async function main(): Promise<void> {
         await testLordTillyRestWaitsForNpcRewardClaim();
         await testDungeonCompletionDoesNotCreateUnstartedMission();
         await testAcceptedForgottenForgeCompletionWaitsForTurnIn();
+        await testAcceptedForgottenForgeHardCompletionWaitsForTurnIn();
         await testValhavenDungeonChainAutoAcceptsProdigalSon();
         testLoginRepairAcceptsMissingValhavenDungeonChainQuest();
         await testMeyloursEmbersClaimsAdohiRewardAndPrimesGlades();

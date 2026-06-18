@@ -97,7 +97,8 @@
     document.cookie = "db_lang=; path=/; max-age=0; SameSite=Lax";
 
     const languageParam = urlLanguage ? `&lang=${urlLanguage}` : "";
-    const swfUrl = `p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv${languageParam}`;
+    const swfUrl = `p/cbp/DungeonBlitz.swf?fv=cdb&gv=cdb${languageParam}`;
+    console.log("[DungeonBlitzHost] Loading SWF", swfUrl);
     const localBridgeBaseUrl = "http://127.0.0.1:47631";
     const selfPresenceUrl = "/api/presence/self";
     const discordJoinUrl = "/api/presence/discord-join";
@@ -195,7 +196,7 @@
       "100%",
       "10.0.0",
       null,
-      { fv: "cbq", gv: "cbp" },
+      { fv: "cdb", gv: "cdb" },
       { allowScriptAccess: "always", allowFullScreen: "true" },
       { id: "DungeonBlitz", name: "DungeonBlitz" },
       function (e) {

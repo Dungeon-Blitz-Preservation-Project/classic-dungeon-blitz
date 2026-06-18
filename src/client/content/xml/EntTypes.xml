@@ -39322,8 +39322,8 @@
 		<RewardClass>NoLoot</RewardClass>
 		<Realm>Spirit</Realm>
 		<Speed>0</Speed>
-		<Width>0</Width>
-		<Height>0</Height>
+		<Width>200</Width>
+		<Height>250</Height>
 		<Behavior>SpawnerNephit</Behavior>
 		<SleepAnim>Sleep</SleepAnim>
 		<EquippedGear/>
@@ -39548,8 +39548,8 @@
 		<RewardClass>NoLoot</RewardClass>
 		<Realm>Spirit</Realm>
 		<Speed>0</Speed>
-		<Width>0</Width>
-		<Height>0</Height>
+		<Width>200</Width>
+		<Height>250</Height>
 		<Behavior>SpawnerNephit</Behavior>
 		<SleepAnim>Sleep</SleepAnim>
 		<EquippedGear/>
@@ -50253,7 +50253,7 @@
 		<DisplayName>Iblis Reaper</DisplayName>
 		<DevStatus>Valhaven</DevStatus>
 		<MeleePower>BruteMelee1</MeleePower>
-		<RangedPower>BruteShot2</RangedPower>
+		<RangedPower>BruteShot</RangedPower>
 		<Powers>BruteHeavy</Powers>
 		<Level>30</Level>
 		<GroupLevel>29</GroupLevel>
@@ -50807,7 +50807,7 @@
 		<DisplayName>Iblis Reaper zor</DisplayName>
 		<DevStatus>Valhaven</DevStatus>
 		<MeleePower>BruteMelee1</MeleePower>
-		<RangedPower>BruteShot2</RangedPower>
+		<RangedPower>BruteShot</RangedPower>
 		<Powers>BruteHeavy</Powers>
 		<Level>30</Level>
 		<GroupLevel>29</GroupLevel>

@@ -12,6 +12,7 @@ import { getVisibleConsumableCount, reconcileConsumableSelectionState } from './
 import { ensureSigilStoreAlertState } from './AlertState';
 import { writeSavedKeyBindings } from './KeyBindings';
 import { normalizeCharacterMaterials } from './MaterialInventory';
+import { CharmID } from '../data/runtime/Charms';
 
 export class WorldEnter {
     private static readonly MASTERCLASS_TO_BUILDING: Record<number, number> = {
@@ -28,7 +29,7 @@ export class WorldEnter {
 
     private static readonly CLASS_TOWER_BUILDINGS: Record<string, number[]> = {
         rogue: [BuildingID.ExecutionerTower, BuildingID.ShadowwalkerTower, BuildingID.SoulthiefTower],
-        paladin: [BuildingID.JusticarTower, BuildingID.SentinelTower, BuildingID.TemplarTower],
+        paladin: [BuildingID.SentinelTower, BuildingID.JusticarTower, BuildingID.TemplarTower],
         mage: [BuildingID.FrostwardenTower, BuildingID.FlameseerTower, BuildingID.NecromancerTower]
     };
 
@@ -442,7 +443,7 @@ export class WorldEnter {
             ? [2, 12, 6, 7, 8, 1, 13]
             : className === 'rogue'
                 ? [2, 12, 9, 10, 11, 1, 13]
-                : [2, 12, 3, 4, 5, 1, 13];
+                : [2, 12, 4, 3, 5, 1, 13];
     }
 
     static resolveMasterClass(char: Character): number {
@@ -508,6 +509,18 @@ export class WorldEnter {
             in_progress: false,
             completed: true
         };
+    }
+
+    private static ownsPrimaryCharm(character: Character, primaryId: number): boolean {
+        const charms = WorldEnter.asArray(character.charms);
+        return charms.some((entry) => (Number(entry?.charmID ?? 0) & 0x1FF) === primaryId && Number(entry?.count ?? 0) > 0);
+    }
+
+    private static shouldUseExtendedRespecForge(character: Character, magicForge: Record<string, any>): boolean {
+        return Boolean(magicForge.is_extended_forge) ||
+            Boolean(character.forgeMilestones?.initial_respec_stone_crafted) ||
+            Number(magicForge.respec_duration_seconds ?? 0) === 86400 ||
+            WorldEnter.ownsPrimaryCharm(character, CharmID.RespecStone);
     }
 
     static buildPlayerDataPacket(
@@ -844,7 +857,7 @@ export class WorldEnter {
                 bb.writeMethod91(Math.min(Number(magicForge.forge_roll_b ?? 0), 65535));
             }
 
-            bb.writeMethod11(Boolean(magicForge.is_extended_forge) ? 1 : 0, 1);
+            bb.writeMethod11(WorldEnter.shouldUseExtendedRespecForge(character, magicForge) ? 1 : 0, 1);
 
             const skillResearch = WorldEnter.asRecord(character.SkillResearch);
             const skillResearchAbilityId = Number(skillResearch.abilityID ?? 0);

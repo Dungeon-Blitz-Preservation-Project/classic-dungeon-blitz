@@ -2502,6 +2502,62 @@ function testGoblinRiverDungeonSuppressesFollowerClientHostileSpawns(): void {
     }
 }
 
+function testAllDungeonsSuppressFollowerClientHostileSpawns(): void {
+    const leader = createFakeClient('Alpha');
+    const follower = createFakeClient('Beta');
+    leader.currentLevel = 'TutorialDungeon';
+    follower.currentLevel = 'TutorialDungeon';
+    leader.levelInstanceId = 'tutorial-authoritative';
+    follower.levelInstanceId = 'tutorial-authoritative';
+    leader.currentRoomId = 4;
+    follower.currentRoomId = 0;
+
+    const canonical = {
+        id: 5303,
+        name: 'IntroGoblin',
+        isPlayer: false,
+        x: 250,
+        y: 310,
+        v: 0,
+        team: 2,
+        renderDepthOffset: 0,
+        entState: 0,
+        clientSpawned: true,
+        ownerToken: leader.token,
+        ownerPartyId: 198,
+        roomId: leader.currentRoomId
+    };
+
+    GlobalState.levelEntities.set('TutorialDungeon#tutorial-authoritative', new Map([[canonical.id, canonical]]));
+    GlobalState.sessionsByToken.set(leader.token, leader as never);
+    GlobalState.sessionsByToken.set(follower.token, follower as never);
+    GlobalState.partyByMember.set('alpha', 198);
+    GlobalState.partyByMember.set('beta', 198);
+    GlobalState.partyGroups.set(198, { id: 198, leader: 'Alpha', members: ['Alpha', 'Beta'], locked: false });
+
+    const duplicate = {
+        ...canonical,
+        id: 6303,
+        ownerToken: follower.token,
+        roomId: follower.currentRoomId
+    };
+
+    const suppressed = (EntityHandler as any).suppressFollowerLeaderAuthoritativeDungeonSpawn(
+        follower as never,
+        'TutorialDungeon',
+        GlobalState.levelEntities.get('TutorialDungeon#tutorial-authoritative'),
+        duplicate
+    );
+
+    const levelMap = GlobalState.levelEntities.get('TutorialDungeon#tutorial-authoritative');
+    assert.equal(suppressed, true, 'all dungeons should suppress follower duplicate hostile spawns once a canonical exists');
+    assert.equal(levelMap?.size, 1, 'follower duplicate should not create a second canonical hostile');
+    assert.equal(follower.knownEntityIds.has(canonical.id), true);
+    assert.equal(follower.knownEntityIds.has(duplicate.id), false);
+    assert.equal(follower.entityIdAliases.get(duplicate.id), canonical.id);
+    assert.equal(follower.entities.get(duplicate.id)?.sharedCanonicalId, canonical.id);
+}
+
 function testTutorialDungeonJoinerSkipsStartedRoomReplayFromPartyAnchor(): void {
     const anchor = createFakeClient('Alpha');
     const joiner = createFakeClient('Beta');
@@ -2878,6 +2934,12 @@ async function main(): Promise<void> {
         GlobalState.sessionsByToken.clear();
         GlobalState.partyByMember.clear();
         testGoblinRiverDungeonSuppressesFollowerClientHostileSpawns();
+
+        GlobalState.levelEntities.clear();
+        GlobalState.sessionsByToken.clear();
+        GlobalState.partyByMember.clear();
+        GlobalState.partyGroups.clear();
+        testAllDungeonsSuppressFollowerClientHostileSpawns();
 
         GlobalState.levelEntities.clear();
         GlobalState.sessionsByToken.clear();

@@ -559,6 +559,15 @@ export class RewardHandler {
         return owned;
     }
 
+    private static collectOwnedDyeIds(client: Client): Set<number> {
+        return new Set<number>(
+            (Array.isArray(client.character?.OwnedDyes) ? client.character.OwnedDyes : [])
+                .map((dye: unknown) => Number(dye))
+                .filter((dyeId: number) => dyeId > 0)
+                .map((dyeId: number) => Math.round(dyeId))
+        );
+    }
+
     private static maybeOverrideDungeonReward(client: Client, sourceEntity: any, reward: RewardRequest): {
         exp: number;
         gold: number;
@@ -648,7 +657,7 @@ export class RewardHandler {
             }
         }
         if (allowItemDrop && dyeDebug.rarity) {
-            dyeId = GameData.getRandomDyeId([dyeDebug.rarity]);
+            dyeId = GameData.getRandomDyeId([dyeDebug.rarity], RewardHandler.collectOwnedDyeIds(client));
         }
         let gearRoll: number | null = null;
         let gearTierRoll: number | null = null;

@@ -20357,7 +20357,7 @@
 		<CastTime>100,100,100,100,100,100</CastTime>
 		<RecoverTime>400</RecoverTime>
 		<CoolDownTime>0</CoolDownTime>
-		<ManaCost>30</ManaCost>
+		<ManaCost>25</ManaCost>
 		<BaseDamageMult>1.43</BaseDamageMult>
 		<ProcModifier>1</ProcModifier>
 		<DamageType>Ice</DamageType>
@@ -29414,7 +29414,7 @@
 		<SpawnLimit>1</SpawnLimit>
 		<SpawnDuration>15000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
+		<Description>Summon a Spirit of Flame for 15 seconds that copies your Fire Brand shots. Grants +30% attack while active.</Description>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29500,8 +29500,8 @@
 		<SpawnDuration>11000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 11 seconds that copies your Fire Brand shots. Grants +15% attack while active.</Description>
+		<UpgradeDescription>Summon a Spirit of Flame for 11 seconds that copies your Fire Brand shots. Grants +15% attack while active.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29529,8 +29529,8 @@
 		<SpawnDuration>12000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Increased duration.</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 12 seconds that copies your Fire Brand shots. Grants +15% attack while active.</Description>
+		<UpgradeDescription>Dragon Soul duration increases to 12 seconds.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29558,8 +29558,8 @@
 		<SpawnDuration>13000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Increased to 20% Attack Boost while active.</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 13 seconds that copies your Fire Brand shots. Grants +20% attack while active.</Description>
+		<UpgradeDescription>+20% Attack Boost while active.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29587,7 +29587,7 @@
 		<SpawnDuration>13000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
+		<Description>Summon a Spirit of Flame for 13 seconds that copies your Fire Brand shots. Grants +20% attack while active.</Description>
 		<UpgradeDescription>-5 Mana Cost.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
@@ -29616,7 +29616,7 @@
 		<SpawnDuration>13000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
+		<Description>Summon a Spirit of Flame for 13 seconds that copies your Fire Brand shots. Grants +20% attack while active.</Description>
 		<UpgradeDescription>-2 Mana Cost. Shots add Scorch.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
@@ -29645,8 +29645,8 @@
 		<SpawnDuration>13500</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Increased duration. Increased Damage #olddmg#</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 13.5 seconds that copies your Fire Brand shots. Grants +20% attack while active.</Description>
+		<UpgradeDescription>Dragon Soul duration increases to 13.5 seconds.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29674,8 +29674,8 @@
 		<SpawnDuration>13500</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>-3 Mana Cost. Increased Damage #olddmg#</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 13.5 seconds that copies your Fire Brand shots. Grants +20% attack while active.</Description>
+		<UpgradeDescription>-3 Mana Cost. Dragon Soul shots deal 92% fire damage.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29703,8 +29703,8 @@
 		<SpawnDuration>14500</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Increased to 30% Attack Boost while active.</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 14.5 seconds that copies your Fire Brand shots. Grants +30% attack while active.</Description>
+		<UpgradeDescription>+30% Attack Boost while active.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29732,8 +29732,8 @@
 		<SpawnDuration>15000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Increased duration.</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 15 seconds that copies your Fire Brand shots. Grants +30% attack while active.</Description>
+		<UpgradeDescription>Dragon Soul duration increases to 15 seconds.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -29761,8 +29761,8 @@
 		<SpawnDuration>15000</SpawnDuration>
 		<DisplayName>Draconic Soul</DisplayName>
 		<BasePowerName>SummonDragonSoul</BasePowerName>
-		<Description>Summon a Spirit of Flame that copies your Fire Brand shots and shoots at your targets. Gain increased damage for the duration.</Description>
-		<UpgradeDescription>Increased Damage #olddmg#</UpgradeDescription>
+		<Description>Summon a Spirit of Flame for 15 seconds that copies your Fire Brand shots. Grants +30% attack while active.</Description>
+		<UpgradeDescription>Dragon Soul lasts 15 seconds, grants +30% attack, and shots deal 98% fire damage.</UpgradeDescription>
 		<IconName>a_PowerIcon_DragonSoul</IconName>
 		<CastSound>CHR_FlameSeer_DraconicSoul_Summon</CastSound>
 		<CastGfx/>
@@ -31611,7 +31611,7 @@
 		<PowerGroup>FireBrand</PowerGroup>
 		<AddTargetBuff>FireBrandRank8</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
+		<Description>For 7.8 seconds, your Fireball uses an 800-range Fire Brand shot that applies Scorched.</Description>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31641,8 +31641,8 @@
 		<AddTargetBuff>FireBrandRank1</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</UpgradeDescription>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 90 AoE and apply Scorched.</Description>
+		<UpgradeDescription>Fire Brand lasts 7.8 seconds and changes party ranged attacks to 90 AoE Scorched shots.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31672,8 +31672,8 @@
 		<AddTargetBuff>FireBrandRank1</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>1.25% Party Bonus Damage per stack of Scorch.</UpgradeDescription>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 90 AoE and apply Scorched.</Description>
+		<UpgradeDescription>Fire Brand shots deal 100% fire damage in a 90 AoE.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31703,8 +31703,8 @@
 		<AddTargetBuff>FireBrandRank3</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>Increased duration.</UpgradeDescription>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 105 AoE and apply Scorched.</Description>
+		<UpgradeDescription>Fire Brand shot AoE increases to 105.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31734,8 +31734,8 @@
 		<AddTargetBuff>FireBrandRank3</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>1.5% Party Bonus Damage per stack of Scorch.</UpgradeDescription>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 105 AoE and apply Scorched.</Description>
+		<UpgradeDescription>Fire Brand shots deal 100% fire damage in a 105 AoE.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31765,8 +31765,8 @@
 		<AddTargetBuff>FireBrandRank3</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>1.75% Party Bonus Damage per stack of Scorch.</UpgradeDescription>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 100% fire damage in a 105 AoE and apply Scorched.</Description>
+		<UpgradeDescription>Fire Brand shots deal 100% fire damage in a 105 AoE.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31796,8 +31796,8 @@
 		<AddTargetBuff>FireBrandRank6</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>Increase duration.</UpgradeDescription>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 50% fire damage in a 120 AoE and apply Scorched and Burned.</Description>
+		<UpgradeDescription>Fire Brand shots apply Burned and expand to a 120 AoE.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31827,7 +31827,7 @@
 		<AddTargetBuff>FireBrandRank6</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
+		<Description>For 7.8 seconds, party ranged attacks become Fire Brand shots that deal 50% fire damage in a 120 AoE and apply Scorched and Burned.</Description>
 		<UpgradeDescription>-2 Mana Cost.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
@@ -31858,8 +31858,8 @@
 		<AddTargetBuff>FireBrandRank8</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>Increase duration.</UpgradeDescription>
+		<Description>For 7.8 seconds, your Fireball uses an 800-range Fire Brand shot that applies Scorched.</Description>
+		<UpgradeDescription>Fireball becomes an 800-range Fire Brand shot that applies Scorched.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -31889,7 +31889,7 @@
 		<AddTargetBuff>FireBrandRank8</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
+		<Description>For 7.8 seconds, your Fireball uses an 800-range Fire Brand shot that applies Scorched.</Description>
 		<UpgradeDescription>-3 Mana Cost.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
@@ -31920,8 +31920,8 @@
 		<AddTargetBuff>FireBrandRank8</AddTargetBuff>
 		<DisplayName>Firebrand</DisplayName>
 		<BasePowerName>FireBrand</BasePowerName>
-		<Description>Your party's attacks apply Scorched and gain bonus damage against Scorched targets.</Description>
-		<UpgradeDescription>2.05% Party Bonus Damage per stack of Scorch.</UpgradeDescription>
+		<Description>For 7.8 seconds, your Fireball uses an 800-range Fire Brand shot that applies Scorched.</Description>
+		<UpgradeDescription>Fire Brand uses the 800-range Scorched Fireball shot for 7.8 seconds.</UpgradeDescription>
 		<IconName>a_PowerIcon_FlameWeapons</IconName>
 		<CastSound>[900]CHR_FlameSeer_Firebrand</CastSound>
 		<CastGfx/>
@@ -47069,7 +47069,7 @@
 		<CastTime>400</CastTime>
 		<RecoverTime>500</RecoverTime>
 		<CoolDownTime>0</CoolDownTime>
-		<ManaCost>30</ManaCost>
+		<ManaCost>25</ManaCost>
 		<BaseDamageMult>3.48</BaseDamageMult>
 		<ProcModifier>1</ProcModifier>
 		<DamageType>Physical</DamageType>

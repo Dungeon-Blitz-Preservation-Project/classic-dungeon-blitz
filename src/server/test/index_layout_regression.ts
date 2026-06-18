@@ -40,7 +40,7 @@ function main(): void {
     assert.equal(indexHtml.includes('"1152",'), false, 'Flash host should not force the embedded object to a fixed authored width');
     assert.equal(indexHtml.includes('"768",'), false, 'Flash host should not force the embedded object to a fixed authored height');
     assert.equal(
-        indexHtml.includes('p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv'),
+        indexHtml.includes('p/cbp/DungeonBlitz.swf?fv=cbx&gv=cbv'),
         true,
         'Flash host should still request the current DungeonBlitz.swf version'
     );

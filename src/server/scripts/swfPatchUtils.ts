@@ -34,6 +34,10 @@ export interface TraitInfo {
   nameIdx: number;
   kindId: number;
   methodIdx: number | null;
+  slotId?: number;
+  typeNameIdx?: number;
+  vindex?: number;
+  vkind?: number;
 }
 
 export interface InstanceInfo {
@@ -65,7 +69,11 @@ export interface MethodBodyInfo {
 
 export interface AbcParseResult {
   intValues: number[];
+  intValuePositions: number[];
+  intValueEndPositions: number[];
+  uintValues: number[];
   doubleValues: number[];
+  doubleValuePositions: number[];
   stringValues: string[];
   stringLenPositions: number[];
   stringDataPositions: number[];
@@ -205,6 +213,23 @@ export function writeU30(value: number): Buffer {
   }
 }
 
+export function writeS32(value: number): Buffer {
+  const out: number[] = [];
+  let rest = value | 0;
+  let more = true;
+  while (more) {
+    let byte = rest & 0x7f;
+    rest >>= 7;
+    const signBitSet = (byte & 0x40) !== 0;
+    more = !((rest === 0 && !signBitSet) || (rest === -1 && signBitSet));
+    if (more) {
+      byte |= 0x80;
+    }
+    out.push(byte);
+  }
+  return Buffer.from(out);
+}
+
 export function parseSwf(filePath: string): SwfContext {
   const raw = fs.readFileSync(filePath);
   if (raw.length < 8) {
@@ -289,14 +314,19 @@ function parseTrait(data: Buffer, start: number, ctx: string): [TraitInfo, numbe
   let methodIdx: number | null = null;
 
   if (kindId === 0 || kindId === 6) {
-    [, pos] = readU30(data, pos, `${ctx}.trait.slot_id`);
-    [, pos] = readU30(data, pos, `${ctx}.trait.type_name`);
+    let slotId: number;
+    let typeNameIdx: number;
+    [slotId, pos] = readU30(data, pos, `${ctx}.trait.slot_id`);
+    [typeNameIdx, pos] = readU30(data, pos, `${ctx}.trait.type_name`);
     let vindex: number;
     [vindex, pos] = readU30(data, pos, `${ctx}.trait.vindex`);
+    let vkind: number | undefined;
     if (vindex !== 0) {
       requireBounds(data, pos, 1, `${ctx}.trait.vkind`);
+      vkind = data[pos];
       pos += 1;
     }
+    return [{ nameIdx, kindId, methodIdx, slotId, typeNameIdx, vindex, vkind }, pos];
   } else if (kindId === 1 || kindId === 2 || kindId === 3) {
     [, pos] = readU30(data, pos, `${ctx}.trait.disp_id`);
     [methodIdx, pos] = readU30(data, pos, `${ctx}.trait.method`);
@@ -328,21 +358,31 @@ export function parseAbc(ctx: SwfContext): AbcParseResult {
   let count: number;
   [count, pos] = readU30(data, pos, "abc.int_count");
   const intValues = [0];
+  const intValuePositions = [0];
+  const intValueEndPositions = [0];
   for (let i = 1; i < count; i += 1) {
     let value: number;
+    const valueStart = pos;
     [value, pos] = readS32(data, pos, `abc.int[${i}]`);
     intValues.push(value);
+    intValuePositions.push(valueStart);
+    intValueEndPositions.push(pos);
   }
 
   [count, pos] = readU30(data, pos, "abc.uint_count");
+  const uintValues = [0];
   for (let i = 1; i < count; i += 1) {
-    [, pos] = readU30(data, pos, `abc.uint[${i}]`);
+    let value: number;
+    [value, pos] = readU30(data, pos, `abc.uint[${i}]`);
+    uintValues.push(value);
   }
 
   [count, pos] = readU30(data, pos, "abc.double_count");
   const doubleValues = [NaN];
+  const doubleValuePositions = [0];
   for (let i = 1; i < count; i += 1) {
     requireBounds(data, pos, 8, `abc.double[${i}]`);
+    doubleValuePositions.push(pos);
     doubleValues.push(data.readDoubleLE(pos));
     pos += 8;
   }
@@ -574,7 +614,11 @@ export function parseAbc(ctx: SwfContext): AbcParseResult {
 
   return {
     intValues,
+    intValuePositions,
+    intValueEndPositions,
+    uintValues,
     doubleValues,
+    doubleValuePositions,
     stringValues,
     stringLenPositions,
     stringDataPositions,

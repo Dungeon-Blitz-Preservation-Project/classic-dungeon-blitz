@@ -131,6 +131,14 @@ function isGetLexMath(abc: ReturnType<typeof parseAbc>, inst: Instruction | unde
   return Boolean(inst && inst.opcode === 0x60 && multiname(abc, inst) === "Math");
 }
 
+function isScaledInventoryDisplay(instructions: Instruction[], index: number): boolean {
+  return (
+    pushByteValue(instructions[index + 1]) === 15 &&
+    instructions[index + 2]?.opcode === 0xa2 &&
+    instructions[index + 3]?.opcode === 0x02
+  );
+}
+
 function assertScreenArmoryCritChanceStatScale(swfPath: string): void {
   const ctx = parseSwf(swfPath);
   const abc = parseAbc(ctx);
@@ -168,11 +176,7 @@ function assertScreenArmoryCritChanceStatScale(swfPath: string): void {
       }
 
       if (
-        isGetLexMath(abc, previousInst) &&
-        pushByteValue(instructions[index + 1]) === 15 &&
-        instructions[index + 2]?.opcode === 0xa2 &&
-        instructions[index + 3]?.opcode === 0x46 &&
-        multiname(abc, instructions[index + 3]) === "round"
+        isScaledInventoryDisplay(instructions, index)
       ) {
         patchedCount += 1;
         continue;
@@ -181,7 +185,9 @@ function assertScreenArmoryCritChanceStatScale(swfPath: string): void {
       if (
         isGetLexMath(abc, previousInst) &&
         pushByteValue(instructions[index + 1]) === 15 &&
-        instructions[index + 2]?.opcode === 0xa2
+        instructions[index + 2]?.opcode === 0xa2 &&
+        instructions[index + 3]?.opcode === 0x46 &&
+        multiname(abc, instructions[index + 3]) === "round"
       ) {
         oldCount += 1;
       }
@@ -199,7 +205,7 @@ function assertScreenArmoryCritChanceStatScale(swfPath: string): void {
   }
 
   assert.equal(oldCount, 0, "served DungeonBlitz.swf should not render Critical Chance with old integer-percent scaling");
-  assert.equal(patchedCount, 3, "served DungeonBlitz.swf should patch all Critical Chance stat-page formatters");
+  assert.equal(patchedCount, 3, "served DungeonBlitz.swf should patch all Critical Chance stat-page formatters to preserve decimals");
 }
 
 assertCritChanceDisplays(

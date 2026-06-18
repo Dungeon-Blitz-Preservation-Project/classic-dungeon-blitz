@@ -55,6 +55,24 @@ export interface DiscordPartyJoinResult {
 export class SocialHandler {
     private static readonly MAX_PARTY_SIZE = 4;
     private static readonly FRIEND_REQUEST_PROMPT_TTL_MS = 5 * 60_000;
+    private static readonly TELEPORT_COMMAND_PREFIXES = ['/teleport:', 'teleport:'];
+    private static readonly TELEPORT_COST_GOLD = 20_000;
+    private static readonly DREAD_TELEPORT_COST_GOLD = 40_000;
+    private static readonly TELEPORT_DESTINATIONS: Map<
+        string,
+        { level: string; dreadLevel: string; displayName: string }
+    > = new Map([
+        ['wolfs-end', { level: 'NewbieRoad', dreadLevel: 'NewbieRoadHard', displayName: "Wolf's End" }],
+        ['black-rose-mire', { level: 'SwampRoadNorth', dreadLevel: 'SwampRoadNorthHard', displayName: 'Black Rose Mire' }],
+        ['castle-hocke', { level: 'Castle', dreadLevel: 'CastleHard', displayName: 'Castle Hocke' }],
+        ['emerald-glades', { level: 'EmeraldGlades', dreadLevel: 'EmeraldGladesHard', displayName: 'Emerald Glades' }],
+        ['stormshard-mountain', { level: 'OldMineMountain', dreadLevel: 'OldMineMountainHard', displayName: 'Stormshard Mountain' }],
+        ['cemetry-hill', { level: 'CemeteryHill', dreadLevel: 'CemeteryHillHard', displayName: 'Cemetery Hill' }],
+        ['cemetery-hill', { level: 'CemeteryHill', dreadLevel: 'CemeteryHillHard', displayName: 'Cemetery Hill' }],
+        ['felbridge', { level: 'BridgeTown', dreadLevel: 'BridgeTownHard', displayName: 'Felbridge' }],
+        ['shazari-desert', { level: 'ShazariDesert', dreadLevel: 'ShazariDesertHard', displayName: 'Shazari Desert' }],
+        ['valhaven', { level: 'JadeCity', dreadLevel: 'JadeCityHard', displayName: 'Valhaven' }]
+    ]);
     private static readonly pendingFriendRequestPrompts: Map<number, PendingFriendRequestPrompt> = new Map();
 
     private static normalizeName(value: unknown): string {
@@ -139,6 +157,105 @@ export class SocialHandler {
         const bb = new BitBuffer(false);
         bb.writeMethod13(text);
         target.sendBitBuffer(0x44, bb);
+    }
+
+    private static sendGoldLoss(client: Client, amount: number): void {
+        const bb = new BitBuffer(false);
+        bb.writeMethod4(amount);
+        client.sendBitBuffer(0xB4, bb);
+    }
+
+    private static parseTeleportCommand(message: string): { slug: string; dread: boolean } | null {
+        const normalized = String(message ?? '').trim().toLowerCase();
+        const prefix = SocialHandler.TELEPORT_COMMAND_PREFIXES.find((entry) => normalized.startsWith(entry));
+        if (!prefix) {
+            return null;
+        }
+
+        const rawSlug = normalized.slice(prefix.length).trim();
+        if (!rawSlug) {
+            return { slug: '', dread: false };
+        }
+
+        const dread = rawSlug.startsWith('dread-');
+        const slug = dread ? rawSlug.slice('dread-'.length) : rawSlug;
+        return { slug, dread };
+    }
+
+    private static buildLevelTeleport(client: Client, targetLevelName: string): PendingTeleport | null {
+        const targetLevel = LevelConfig.normalizeLevelName(targetLevelName);
+        if (!targetLevel || !LevelConfig.has(targetLevel)) {
+            return null;
+        }
+
+        const spawn = LevelConfig.getSpawnCoordinates(client.character, targetLevel, targetLevel);
+        return {
+            targetLevel,
+            x: spawn.x,
+            y: spawn.y,
+            hasCoord: spawn.hasCoord
+        };
+    }
+
+    private static async handleTeleportCommand(client: Client, message: string): Promise<boolean> {
+        const parsed = SocialHandler.parseTeleportCommand(message);
+        if (!parsed) {
+            return false;
+        }
+
+        if (!client.character || !client.token) {
+            return true;
+        }
+
+        const destination = SocialHandler.TELEPORT_DESTINATIONS.get(parsed.slug);
+        if (!destination) {
+            SocialHandler.sendChatStatus(client, 'Unknown teleport destination.');
+            return true;
+        }
+
+        const targetLevel = parsed.dread ? destination.dreadLevel : destination.level;
+        const teleport = SocialHandler.buildLevelTeleport(client, targetLevel);
+        if (!teleport) {
+            SocialHandler.sendChatStatus(client, 'Teleport target is unavailable.');
+            return true;
+        }
+
+        const cost = parsed.dread ? SocialHandler.DREAD_TELEPORT_COST_GOLD : SocialHandler.TELEPORT_COST_GOLD;
+        const currentGold = Math.max(0, Math.floor(Number(client.character.gold ?? 0)));
+        const destinationName = `${parsed.dread ? 'Dread ' : ''}${destination.displayName}`;
+        if (!LevelHandler.isLevelUnlockedForFastTravel(client, teleport.targetLevel)) {
+            SocialHandler.sendChatStatus(client, `You haven't unlocked ${destinationName} yet.`);
+            return true;
+        }
+
+        if (currentGold < cost) {
+            SocialHandler.sendChatStatus(
+                client,
+                `You need ${cost.toLocaleString('en-US')} gold to teleport to ${destinationName}.`
+            );
+            return true;
+        }
+
+        client.character.gold = currentGold - cost;
+        if (client.userId) {
+            await db.saveCharacters(client.userId, client.characters);
+        }
+
+        SocialHandler.sendGoldLoss(client, cost);
+
+        client.craftTownHostCharacter = null;
+        GlobalState.pendingTeleports.set(client.token, teleport);
+        client.lastDoorId = 0;
+        client.lastDoorTargetLevel = teleport.targetLevel;
+        client.armPendingTransferGrace();
+        PetHandler.armMountTravelProtection(client, 5000, false);
+
+        const bb = new BitBuffer(false);
+        bb.writeMethod4(0);
+        bb.writeMethod13(teleport.targetLevel);
+        client.sendBitBuffer(0x2e, bb);
+
+        return true;
     }
 
     private static sendQueryMessageQuestion(target: Client, token: number, name: string, message: string): void {
@@ -234,20 +351,28 @@ export class SocialHandler {
             return false;
         }
 
+        const normalizedEntry = {
+            name: String(entry.name ?? '').trim(),
+            isRequest: Boolean(entry.isRequest)
+        };
+        if (!normalizedEntry.name) {
+            return false;
+        }
+
         const friends = SocialHandler.getFriendEntries(character);
-        const index = SocialHandler.findFriendIndex(character, entry.name);
+        const index = SocialHandler.findFriendIndex(character, normalizedEntry.name);
         if (index >= 0) {
             const current = friends[index];
-            if (current.name === entry.name && current.isRequest === entry.isRequest) {
+            if (current.name === normalizedEntry.name && current.isRequest === normalizedEntry.isRequest) {
                 return false;
             }
 
-            friends[index] = { ...entry };
+            friends[index] = normalizedEntry;
             character.friends = friends;
             return true;
         }
 
-        character.friends = [...friends, { ...entry }];
+        character.friends = [...friends, normalizedEntry];
         return true;
     }
 
@@ -270,15 +395,16 @@ export class SocialHandler {
     }
 
     private static buildFriendStatusPayload(friendName: string, isRequest: boolean, session: Client | null): Buffer {
+        const normalizedFriendName = String(friendName ?? '').trim();
         const bb = new BitBuffer(false);
-        bb.writeMethod13(friendName);
+        bb.writeMethod13(normalizedFriendName);
         bb.writeMethod15(isRequest);
 
         const online = Boolean(session?.character);
         bb.writeMethod15(online);
         if (online && session?.character) {
-            const displayName = session.character.name;
-            const hasCustomCharacterName = displayName !== friendName;
+            const displayName = String(session.character.name ?? '').trim() || normalizedFriendName;
+            const hasCustomCharacterName = displayName !== normalizedFriendName;
             bb.writeMethod15(hasCustomCharacterName);
             if (hasCustomCharacterName) {
                 bb.writeMethod13(displayName);
@@ -1038,6 +1164,10 @@ export class SocialHandler {
         const br = new BitReader(data);
         br.readMethod9();
         const message = String(br.readMethod13() ?? '').trim();
+
+        if (await SocialHandler.handleTeleportCommand(client, message)) {
+            return;
+        }
 
         if (client.character) {
             const match = /^\/lang:\s*(tr|en)\s*$/i.exec(message);
@@ -1829,14 +1959,17 @@ export class SocialHandler {
 
     static handleStartSkit(client: Client, data: Buffer): void {
         const br = new BitReader(data);
-        const entityId = br.readMethod9();
-        br.readMethod15();
+        const sourceEntityId = br.readMethod9();
+        const playerThought = br.readMethod15();
         const text = br.readMethod26();
+        const entityId = playerThought && client.clientEntID > 0
+            ? client.clientEntID
+            : sourceEntityId;
         const payload = SocialHandler.buildRoomThoughtPayload(
             entityId,
             SocialHandler.translateRoomThought(client, entityId, text)
         );
-        LevelHandler.maybeStartGoblinRiverBossIntroLock(client, entityId, text);
+        LevelHandler.maybeStartGoblinRiverBossIntroLock(client, sourceEntityId, text);
         MissionHandler.noteDungeonSkitActivity(client);
 
         SocialHandler.relayToLevel(client, 0x76, payload, true);

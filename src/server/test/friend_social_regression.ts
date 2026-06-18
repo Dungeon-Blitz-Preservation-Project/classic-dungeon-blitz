@@ -118,6 +118,29 @@ function decodeFriendUpdate(payload: Buffer): { name: string; isRequest: boolean
     };
 }
 
+function decodeFriendStatus(payload: Buffer): {
+    name: string;
+    isRequest: boolean;
+    online: boolean;
+    displayName: string;
+    classId: number;
+    level: number;
+} {
+    const br = new BitReader(payload);
+    const name = br.readMethod13();
+    const isRequest = br.readMethod15();
+    const online = br.readMethod15();
+    let displayName = name;
+    let classId = 0;
+    let level = 0;
+    if (online) {
+        displayName = br.readMethod15() ? br.readMethod13() : name;
+        classId = br.readMethod6(2);
+        level = br.readMethod6(6);
+    }
+    return { name, isRequest, online, displayName, classId, level };
+}
+
 function decodeFriendRemoved(payload: Buffer): string {
     const br = new BitReader(payload);
     return br.readMethod13();
@@ -166,6 +189,10 @@ async function testAcceptPreservesExistingFriendKey(): Promise<void> {
 async function testLiveFriendRequestSendsVisiblePromptAndAccepts(): Promise<void> {
     const requester = createFakeClient('Elmayuk');
     const receiver = createFakeClient('Fleerpuh');
+    requester.character.class = 'Mage';
+    requester.character.level = 37;
+    receiver.character.class = 'Rogue';
+    receiver.character.level = 12;
     requester.token = 9101;
     receiver.token = 9102;
 
@@ -202,15 +229,45 @@ async function testLiveFriendRequestSendsVisiblePromptAndAccepts(): Promise<void
 
     const receiverAcceptUpdate = receiver.sentPackets
         .filter((packet) => packet.id === 0x92)
-        .map((packet) => decodeFriendUpdate(packet.payload))
+        .map((packet) => decodeFriendStatus(packet.payload))
         .at(-1);
     const requesterAcceptUpdate = requester.sentPackets
         .filter((packet) => packet.id === 0x92)
-        .map((packet) => decodeFriendUpdate(packet.payload))
+        .map((packet) => decodeFriendStatus(packet.payload))
         .at(-1);
 
-    assert.deepEqual(receiverAcceptUpdate, { name: 'Elmayuk', isRequest: false });
-    assert.deepEqual(requesterAcceptUpdate, { name: 'Fleerpuh', isRequest: false });
+    assert.deepEqual(receiverAcceptUpdate, {
+        name: 'Elmayuk',
+        isRequest: false,
+        online: true,
+        displayName: 'Elmayuk',
+        classId: 2,
+        level: 37
+    });
+    assert.deepEqual(requesterAcceptUpdate, {
+        name: 'Fleerpuh',
+        isRequest: false,
+        online: true,
+        displayName: 'Fleerpuh',
+        classId: 1,
+        level: 12
+    });
+}
+
+function testBlankSavedFriendNamesAreDroppedFromFullList(): void {
+    const client = createFakeClient('Receiver', [
+        { name: '   ', isRequest: false },
+        { name: 'Elmayuk', isRequest: false }
+    ]);
+
+    SocialHandler.handleRequestFriendList(client as never, Buffer.alloc(0));
+
+    const packet = client.sentPackets.find((entry) => entry.id === 0xCA);
+    assert.ok(packet, 'friend-list request should send a full friend list');
+    const br = new BitReader(packet!.payload);
+    assert.equal(br.readMethod4(), 1, 'blank saved friend entries should not be sent to the client');
+    assert.equal(br.readMethod13(), 'Elmayuk');
+    assert.equal(br.readMethod15(), false);
 }
 
 async function testPendingFriendRequestResendsVisiblePrompt(): Promise<void> {
@@ -562,6 +619,10 @@ async function main(): Promise<void> {
         GlobalState.sessionsByCharacterName.clear();
         GlobalState.sessionsByToken.clear();
         await testLiveFriendRequestSendsVisiblePromptAndAccepts();
+
+        GlobalState.sessionsByCharacterName.clear();
+        GlobalState.sessionsByToken.clear();
+        testBlankSavedFriendNamesAreDroppedFromFullList();
 
         GlobalState.sessionsByCharacterName.clear();
         GlobalState.sessionsByToken.clear();

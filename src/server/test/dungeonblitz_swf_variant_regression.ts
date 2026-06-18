@@ -27,9 +27,9 @@ function resolveBaseSwfPath(): string {
 
 const BASE_SWF_PATH = resolveBaseSwfPath();
 const MULTIPLAYER_HOST = Config.MULTIPLAYER_HOST;
-const LOCAL_REFRESH_URL = 'http://localhost:8000/p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv';
-const MULTIPLAYER_REFRESH_URL = `http://${MULTIPLAYER_HOST}/p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv`;
-const LEGACY_REFRESH_URL = '/p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv';
+const LOCAL_REFRESH_URL = 'http://localhost:8000/p/cbp/DungeonBlitz.swf?fv=cbx&gv=cbv';
+const MULTIPLAYER_REFRESH_URL = `http://${MULTIPLAYER_HOST}/p/cbp/DungeonBlitz.swf?fv=cbx&gv=cbv`;
+const LEGACY_REFRESH_URL = '/p/cbp/DungeonBlitz.swf?fv=cbx&gv=cbv';
 const BITMAPDATA_TOTAL_PIXELS = 16777215;
 const CLASS82_SCENE_CACHE_SAFE_PIXELS = 4194304;
 const CLASS72_FLOAT_TEXT_SAFE_PIXELS = 262144;
@@ -623,7 +623,7 @@ function assertMainMethod561KeepsMaxScaleClamp(swfPath: string): void {
 function assertDungeonQuestHelperPrefersDungeonProgress(swfPath: string): void {
     const { abc, instructions } = getInstanceMethodCode(swfPath, 'Game', 'SelectMissionToTrack');
     const hasDungeonGuard = instructions.some((instruction, index) => {
-        const window = instructions.slice(index, index + 16);
+        const window = instructions.slice(index, index + 25);
         return (
             instruction.opcode === 0xd0 &&
             window[1]?.opcode === 0x66 &&
@@ -640,6 +640,14 @@ function assertDungeonQuestHelperPrefersDungeonProgress(swfPath: string): void {
         hasDungeonGuard,
         true,
         'Game.SelectMissionToTrack must clear only visual tracked missions in instanced dungeons'
+    );
+    assert.equal(
+        instructions.some((instruction) =>
+            instruction.opcode === 0x2c &&
+            abc.stringValues[instruction.operands[0]?.[1] ?? 0] === 'CraftTownTutorial'
+        ),
+        true,
+        'Game.SelectMissionToTrack must let CraftTownTutorial use normal mission tracker progress'
     );
 }
 

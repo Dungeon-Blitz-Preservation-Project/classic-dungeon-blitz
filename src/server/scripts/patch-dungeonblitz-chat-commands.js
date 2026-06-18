@@ -50,7 +50,7 @@ function printHelp() {
             '',
             'Defaults:',
             '  exports and patches class_127 in the served DungeonBlitz SWF',
-            '  so /lang commands pass through and social commands send their resolved packet instead of null.'
+            '  so /lang and /teleport commands pass through and social commands send their resolved packet instead of null.'
         ].join('\n')
     );
 }
@@ -137,10 +137,13 @@ function exportClass127Pcode(ffdecPath, workRoot, swfPath) {
 
 function verifyPatchedClass127(source, swfPath) {
     if (!source.includes('private function method_1940(param1:String) : Boolean')) {
-        throw new Error(`${path.basename(swfPath)} is missing the /lang passthrough helper.`);
+        throw new Error(`${path.basename(swfPath)} is missing the chat command passthrough helper.`);
     }
     if (!source.includes('_loc2_ = "/lang:" + _loc2_.substr(6).split(" ").join("");')) {
         throw new Error(`${path.basename(swfPath)} is missing whitespace-tolerant /lang normalization.`);
+    }
+    if (!source.includes('return _loc2_ == "/lang:tr" || _loc2_ == "/lang:en" || _loc2_.indexOf("/teleport:") == 0')) {
+        throw new Error(`${path.basename(swfPath)} is missing /teleport passthrough support.`);
     }
     if (!source.includes('var_1.linkUpdater.WriteChatMessage(param1,param2);')) {
         throw new Error(`${path.basename(swfPath)} is missing the /lang passthrough send path.`);
@@ -154,7 +157,11 @@ function verifyPatchedClass127(source, swfPath) {
     if (!source.includes('var_1.serverConn.SendPacket(_loc7_);')) {
         throw new Error(`${path.basename(swfPath)} is missing social command packet send forwarding.`);
     }
-    if (source.includes('var_1.serverConn.SendPacket(null);')) {
+    const socialCommandBlock = /if\(const_20\[param1\]\)[\s\S]*?\n\s*\}\r?\n\s*else if\(param1 == "TELEPORT"\)/.exec(source)?.[0] ?? '';
+    if (!socialCommandBlock) {
+        throw new Error(`${path.basename(swfPath)} is missing the social command packet block.`);
+    }
+    if (socialCommandBlock.includes('var_1.serverConn.SendPacket(null);')) {
         throw new Error(`${path.basename(swfPath)} still drops social command packets.`);
     }
 }
@@ -194,7 +201,7 @@ function patchClass127Source(source, swfPath) {
         '         {',
         '            _loc2_ = "\\\\lang:" + _loc2_.substr(6).split(" ").join("");',
         '         }',
-        '         return _loc2_ == "/lang:tr" || _loc2_ == "/lang:en" || _loc2_ == "\\\\lang:tr" || _loc2_ == "\\\\lang:en";'
+        '         return _loc2_ == "/lang:tr" || _loc2_ == "/lang:en" || _loc2_.indexOf("/teleport:") == 0 || _loc2_ == "\\\\lang:tr" || _loc2_ == "\\\\lang:en" || _loc2_.indexOf("\\\\teleport:") == 0;'
     ].join('\n');
 
     const helper = [
@@ -292,14 +299,11 @@ function patchPublicChatSenderName(source, swfPath) {
         'var _loc5_:String = "Unknown";\n         var _loc6_:String = MathUtil.method_259(param2);'
     );
 
-    const inlineNameDeclaration = 'var _loc5_:String = Boolean(_loc4_) && Boolean(_loc4_.entType) ? _loc4_.entType.entName : "Unknown";';
-    if (!source.includes(inlineNameDeclaration)) {
+    const inlineNameDeclaration = /var _loc5_:String = \(?Boolean\(_loc4_\)\)? && Boolean\(_loc4_\.entType\) \? _loc4_\.entType\.entName : "Unknown";/;
+    if (!inlineNameDeclaration.test(source)) {
         throw new Error(`${path.basename(swfPath)} has an unexpected ReceiveChat sender-name assignment.`);
     }
-    source = source.replace(
-        inlineNameDeclaration,
-        '_loc5_ = Boolean(_loc4_) && Boolean(_loc4_.entType) ? _loc4_.entType.entName : "Unknown";'
-    );
+    source = source.replace(inlineNameDeclaration, '_loc5_ = Boolean(_loc4_) && Boolean(_loc4_.entType) ? _loc4_.entType.entName : "Unknown";');
 
     const hardcodedName = '_loc10_ = var_1.FormatHotName("Unknown");';
     if (!source.includes(hardcodedName)) {

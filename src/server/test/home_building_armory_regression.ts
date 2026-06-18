@@ -163,6 +163,15 @@ function createVisitedClient(): FakeClient {
     };
 }
 
+function createOwnHomeClient(name: string = 'Builder'): FakeClient {
+    const client = createVisitedClient();
+    client.character = createCharacter(name);
+    client.characters = [client.character];
+    client.craftTownHostCharacter = null;
+    client.levelInstanceId = getCraftTownHomeInstanceId(client.character);
+    return client;
+}
+
 async function withSavesBlocked<T>(fn: () => Promise<T> | T): Promise<T> {
     const originalSaveCharacterSnapshot = JsonAdapter.prototype.saveCharacterSnapshot;
     const originalSaveCharacters = JsonAdapter.prototype.saveCharacters;
@@ -178,6 +187,19 @@ async function withSavesBlocked<T>(fn: () => Promise<T> | T): Promise<T> {
     } finally {
         JsonAdapter.prototype.saveCharacterSnapshot = originalSaveCharacterSnapshot;
         JsonAdapter.prototype.saveCharacters = originalSaveCharacters;
+    }
+}
+
+async function withMockedCharacterSave<T>(fn: () => Promise<T> | T): Promise<T> {
+    const originalSaveCharacterSnapshot = JsonAdapter.prototype.saveCharacterSnapshot;
+    JsonAdapter.prototype.saveCharacterSnapshot = async function(userId: number, character: Character): Promise<Character[]> {
+        return [{ ...character, userId } as Character];
+    };
+
+    try {
+        return await fn();
+    } finally {
+        JsonAdapter.prototype.saveCharacterSnapshot = originalSaveCharacterSnapshot;
     }
 }
 
@@ -281,6 +303,25 @@ async function testBuildingMutationBlockedAndOwnerStateReasserted(): Promise<voi
         .map((packet) => decodeBuildingDelta(packet.payload))
         .find((packet) => packet.targetBuildingId === 3);
     assert.equal(ownerTower?.targetRank, 4, 'visited Home building refresh should reassert owner tower state');
+}
+
+async function testBuildingUpgradeTimeUsesRankSchedule(): Promise<void> {
+    const client = createOwnHomeClient('Builder');
+    const before = Math.floor(Date.now() / 1000);
+
+    await withMockedCharacterSave(async () => {
+        await BuildingHandler.handleBuildingUpgrade(client as never, createBuildingUpgradePacket());
+    });
+
+    const readyTime = Number(client.character.buildingUpgrade?.ReadyTime ?? 0);
+    assert.ok(
+        readyTime >= before + (4 * 60 * 60),
+        'rank 2 home building upgrade should use the configured four-hour timer'
+    );
+    assert.ok(
+        readyTime <= Math.floor(Date.now() / 1000) + (4 * 60 * 60) + 5,
+        'rank 2 home building upgrade should not exceed the configured four-hour timer'
+    );
 }
 
 function testBuildingRefreshReassertsInactiveClassTowers(): void {
@@ -586,7 +627,7 @@ function testVisitedHomePlayerDataUsesHostBuildingClassOrder(): void {
 
     assert.deepEqual(
         WorldEnter.getPlayerDataBuildingOrder(visitor, owner),
-        [2, 12, 3, 4, 5, 1, 13],
+        [2, 12, 4, 3, 5, 1, 13],
         'visited Home extended player data should serialize building ranks using the owner class buildings'
     );
     assert.notDeepEqual(
@@ -649,6 +690,7 @@ async function testArmoryUsesVisitedHomeHostInventory(): Promise<void> {
 async function main(): Promise<void> {
     testGuardDetectsOnlyOtherPlayersHome();
     await testBuildingMutationBlockedAndOwnerStateReasserted();
+    await testBuildingUpgradeTimeUsesRankSchedule();
     testBuildingRefreshReassertsInactiveClassTowers();
     testBuildingRefreshKeepsVisitedOwnerInactiveClassTowers();
     testVisitedHomeEnterWorldMarksOwnerToken();

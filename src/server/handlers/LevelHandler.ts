@@ -17,6 +17,7 @@ import {
     noteDungeonRunCompletionProgress,
     noteDungeonRunEntitySeen
 } from '../core/DungeonRunStats';
+import { clearStoredDungeonSnapshot } from '../core/DungeonSnapshot';
 import { DungeonEntryDisplay } from '../core/DungeonEntryDisplay';
 import { WorldEnter } from '../utils/WorldEnter';
 import { Config } from '../core/config';
@@ -908,8 +909,55 @@ export class LevelHandler {
         'JadeCity->JadeCityHard'
     ]);
     private static readonly STORY_AREA_ENTRY_REQUIREMENTS = new Map<string, number>([
+        ['Castle->ShazariDesert', MissionID.IntoTheDepths],
+        ['CastleHard->ShazariDesertHard', MissionID.IntoTheDepthsHard],
         ['BridgeTownHard->CemeteryHillHard', MissionID.OldHeroesNeverDieHard],
         ['BridgeTownHard->OldMineMountainHard', MissionID.DerelictionOfDutyHard]
+    ]);
+    private static readonly STORY_AREA_ENTRY_MIN_STATES = new Map<string, number>([
+        ['Castle->ShazariDesert', LevelHandler.MISSION_IN_PROGRESS],
+        ['CastleHard->ShazariDesertHard', LevelHandler.MISSION_IN_PROGRESS]
+    ]);
+    private static readonly FAST_TRAVEL_AREA_REQUIREMENTS = new Map<
+        string,
+        Array<{ missionId: number; minState: number }>
+    >([
+        ['NewbieRoad', []],
+        ['SwampRoadNorth', []],
+        ['BridgeTown', [{ missionId: MissionID.ClearTheBridge, minState: LevelHandler.MISSION_READY_TO_TURN_IN }]],
+        ['CemeteryHill', [{ missionId: MissionID.ClearTheBridge, minState: LevelHandler.MISSION_READY_TO_TURN_IN }]],
+        ['OldMineMountain', [{ missionId: MissionID.ClearTheBridge, minState: LevelHandler.MISSION_READY_TO_TURN_IN }]],
+        ['EmeraldGlades', [{ missionId: MissionID.ClearTheBridge, minState: LevelHandler.MISSION_READY_TO_TURN_IN }]],
+        ['Castle', [{ missionId: MissionID.DeepgardDragon, minState: LevelHandler.MISSION_READY_TO_TURN_IN }]],
+        ['ShazariDesert', [{ missionId: MissionID.IntoTheDepths, minState: LevelHandler.MISSION_IN_PROGRESS }]],
+        ['JadeCity', [{ missionId: MissionID.HeadToValhaven, minState: LevelHandler.MISSION_READY_TO_TURN_IN }]],
+        ['NewbieRoadHard', [{ missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED }]],
+        ['SwampRoadNorthHard', [{ missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED }]],
+        ['BridgeTownHard', [{ missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED }]],
+        ['CemeteryHillHard', [
+            { missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED },
+            { missionId: MissionID.OldHeroesNeverDieHard, minState: LevelHandler.MISSION_CLAIMED }
+        ]],
+        ['OldMineMountainHard', [
+            { missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED },
+            { missionId: MissionID.DerelictionOfDutyHard, minState: LevelHandler.MISSION_CLAIMED }
+        ]],
+        ['EmeraldGladesHard', [
+            { missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED },
+            { missionId: MissionID.DerelictionOfDutyHard, minState: LevelHandler.MISSION_CLAIMED }
+        ]],
+        ['CastleHard', [
+            { missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED },
+            { missionId: MissionID.DeepgardDragonHard, minState: LevelHandler.MISSION_READY_TO_TURN_IN }
+        ]],
+        ['ShazariDesertHard', [
+            { missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED },
+            { missionId: MissionID.IntoTheDepthsHard, minState: LevelHandler.MISSION_IN_PROGRESS }
+        ]],
+        ['JadeCityHard', [
+            { missionId: MissionID.Capstone, minState: LevelHandler.MISSION_CLAIMED },
+            { missionId: MissionID.HeadToValhavenHard, minState: LevelHandler.MISSION_READY_TO_TURN_IN }
+        ]]
     ]);
     private static readonly KEEP_TUTORIAL_BOSS_TRIGGER_X = Number.MAX_SAFE_INTEGER;
     private static readonly KEEP_TUTORIAL_CUTSCENE_STEP_MS = 250;
@@ -1101,7 +1149,8 @@ export class LevelHandler {
         const requiredKills = Math.max(1, getSharedDungeonProgressTotals(levelScope).total);
         MissionHandler.scheduleDungeonCompletion(
             authorityClient,
-            LevelHandler.buildSharedDungeonAutoCompletePayload(requiredKills)
+            LevelHandler.buildSharedDungeonAutoCompletePayload(requiredKills),
+            MissionHandler.getSharedDungeonAutoCompleteScheduleOptions(authorityClient, levelScope)
         );
         const refreshDelay = MissionHandler.DUNGEON_COMPLETION_SKIT_SETTLE_MS + 50;
         setTimeout(() => {
@@ -2955,6 +3004,41 @@ export class LevelHandler {
         return Number(state ?? LevelHandler.MISSION_NOT_STARTED);
     }
 
+    private static hasSavedLevelRecord(client: Client, targetLevel: string): boolean {
+        for (const record of [client.character?.CurrentLevel, client.character?.PreviousLevel]) {
+            const levelName =
+                LevelConfig.normalizeLevelName(record?.name) ||
+                String(record?.name ?? '').trim();
+            if (levelName === targetLevel) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static isLevelUnlockedForFastTravel(client: Client, targetLevelRaw: string | null | undefined): boolean {
+        const targetLevel =
+            LevelConfig.normalizeLevelName(targetLevelRaw || '') ||
+            String(targetLevelRaw ?? '').trim();
+        if (!targetLevel || !LevelConfig.has(targetLevel) || !client.character) {
+            return false;
+        }
+
+        if (LevelHandler.hasSavedLevelRecord(client, targetLevel)) {
+            return true;
+        }
+
+        const requirements = LevelHandler.FAST_TRAVEL_AREA_REQUIREMENTS.get(targetLevel);
+        if (!requirements) {
+            return true;
+        }
+
+        return requirements.every((requirement) =>
+            LevelHandler.getMissionState(client, requirement.missionId) >= requirement.minState
+        );
+    }
+
     private static isDungeonEntryUnlocked(client: Client, _currentLevel: string, targetLevelRaw: string | null): boolean {
         const targetLevel =
             LevelConfig.normalizeLevelName(targetLevelRaw || '') ||
@@ -2983,7 +3067,15 @@ export class LevelHandler {
         return missionId === MissionID.TempleOfShadows ||
             missionId === MissionID.TempleOfShadowsHard ||
             missionId === MissionID.SlayMindlessQueen ||
-            missionId === MissionID.SlayMindlessQueenHard;
+            missionId === MissionID.SlayMindlessQueenHard ||
+            missionId === MissionID.SlayYornak ||
+            missionId === MissionID.SlayYornakHard ||
+            missionId === MissionID.DerelictionOfDuty ||
+            missionId === MissionID.DerelictionOfDutyHard ||
+            missionId === MissionID.AbandonedArmory ||
+            missionId === MissionID.AbandonedArmoryHard ||
+            missionId === MissionID.AncientBurialGrounds ||
+            missionId === MissionID.AncientBurialGroundsHard;
     }
 
     private static getAdditionalDreadfoldGateRequiredMission(currentLevel: string, targetLevel: string): number {
@@ -2992,6 +3084,17 @@ export class LevelHandler {
         }
 
         return 0;
+    }
+
+    private static isReturnToDreadShazariContext(client: Client, targetLevel: string): boolean {
+        const previousLevel =
+            LevelConfig.normalizeLevelName(client.character?.PreviousLevel?.name) ||
+            String(client.character?.PreviousLevel?.name ?? '').trim();
+        const entryLevel =
+            LevelConfig.normalizeLevelName(client.entryLevel) ||
+            String(client.entryLevel ?? '').trim();
+
+        return previousLevel === targetLevel || entryLevel === targetLevel;
     }
 
     private static isDreadfoldGateUnlocked(
@@ -3013,6 +3116,10 @@ export class LevelHandler {
 
         if (!LevelHandler.DREADFOLD_ENTRY_TRANSITIONS.has(`${normalizedCurrentLevel}->${targetLevel}`)) {
             return true;
+        }
+
+        if (normalizedCurrentLevel === 'ShazariDesert' && targetLevel === 'ShazariDesertHard') {
+            return LevelHandler.isReturnToDreadShazariContext(client, targetLevel);
         }
 
         if (LevelHandler.getMissionState(client, MissionID.Capstone) < LevelHandler.MISSION_CLAIMED) {
@@ -3037,7 +3144,7 @@ export class LevelHandler {
         );
     }
 
-    private static getRequiredStoryAreaEntryMission(currentLevel: string, targetLevelRaw: string | null): number {
+    private static getStoryAreaEntryRequirementKey(currentLevel: string, targetLevelRaw: string | null): string {
         const normalizedCurrentLevel =
             LevelConfig.normalizeLevelName(currentLevel) ||
             String(currentLevel ?? '').trim();
@@ -3046,16 +3153,27 @@ export class LevelHandler {
             String(targetLevelRaw || '').trim();
 
         if (!normalizedCurrentLevel || !targetLevel) {
+            return '';
+        }
+
+        return `${normalizedCurrentLevel}->${targetLevel}`;
+    }
+
+    private static getRequiredStoryAreaEntryMission(currentLevel: string, targetLevelRaw: string | null): number {
+        const requirementKey = LevelHandler.getStoryAreaEntryRequirementKey(currentLevel, targetLevelRaw);
+        if (!requirementKey) {
             return 0;
         }
 
-        return LevelHandler.STORY_AREA_ENTRY_REQUIREMENTS.get(`${normalizedCurrentLevel}->${targetLevel}`) ?? 0;
+        return LevelHandler.STORY_AREA_ENTRY_REQUIREMENTS.get(requirementKey) ?? 0;
     }
 
     private static isStoryAreaEntryUnlocked(client: Client, currentLevel: string, targetLevelRaw: string | null): boolean {
         const requiredMissionId = LevelHandler.getRequiredStoryAreaEntryMission(currentLevel, targetLevelRaw);
+        const requirementKey = LevelHandler.getStoryAreaEntryRequirementKey(currentLevel, targetLevelRaw);
+        const minState = LevelHandler.STORY_AREA_ENTRY_MIN_STATES.get(requirementKey) ?? LevelHandler.MISSION_CLAIMED;
         return requiredMissionId <= 0 ||
-            LevelHandler.getMissionState(client, requiredMissionId) >= LevelHandler.MISSION_CLAIMED;
+            LevelHandler.getMissionState(client, requiredMissionId) >= minState;
     }
 
     private static isStoryAreaTransferUnlocked(client: Client, targetLevelRaw: string | null): boolean {
@@ -3723,7 +3841,7 @@ export class LevelHandler {
             rawTargetLevel &&
             !LevelHandler.isStoryAreaEntryUnlocked(client, currentLevel, rawTargetLevel)
         ) {
-            console.log(`[Level] Open Door ${doorId} in ${currentLevel} blocked until the required story area mission is claimed`);
+            console.log(`[Level] Open Door ${doorId} in ${currentLevel} blocked until the required story area mission state is reached`);
             LevelHandler.sendDeniedDoorResponse(client, doorId, rawTargetLevel, LevelHandler.LOCKED_STORY_AREA_ENTRY_MESSAGE, true);
             return;
         }
@@ -4039,7 +4157,7 @@ export class LevelHandler {
         }
 
         if (!teleportOverride && !LevelHandler.isStoryAreaTransferUnlocked(client, targetLevel)) {
-            console.log(`[Level] Transfer to ${targetLevel} blocked until the required story area mission is claimed`);
+            console.log(`[Level] Transfer to ${targetLevel} blocked until the required story area mission state is reached`);
             LevelHandler.sendDeniedDoorResponse(
                 client,
                 client.lastDoorId,
@@ -4115,6 +4233,9 @@ export class LevelHandler {
         syncPotionReservationForLevelTransition(activeCharacter, oldLevel, targetLevel);
         client.activePotionDrainAtMs = 0;
         LevelConfig.updateSavedLevelsOnTransfer(activeCharacter, oldLevel, targetLevel, newX, newY);
+        if (!LevelConfig.isDungeonLevel(targetLevel)) {
+            clearStoredDungeonSnapshot(activeCharacter);
+        }
 
         if (client.userId) {
             await LevelHandler.saveCurrentCharacterSnapshot(client);

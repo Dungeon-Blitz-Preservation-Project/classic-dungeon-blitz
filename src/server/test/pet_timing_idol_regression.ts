@@ -91,7 +91,7 @@ async function withMockedCharacterSave<T>(fn: () => Promise<T>): Promise<T> {
     }
 }
 
-async function testPetTrainingCannotBeCollectedBeforeReadyTime(): Promise<void> {
+async function testPetTrainingWithGoldCompletesImmediately(): Promise<void> {
     const client = createClient();
 
     await withMockedCharacterSave(async () => {
@@ -100,28 +100,19 @@ async function testPetTrainingCannotBeCollectedBeforeReadyTime(): Promise<void> 
 
     assert.equal(client.character.gold, 96000, 'training with gold should deduct the gold cost');
     assert.ok(client.sentPackets.some((packet) => packet.id === 0xB4), 'training with gold should refresh the gold UI');
-    assert.equal(client.character.pets?.[0]?.level, 2, 'training should not level the pet immediately');
-    assert.ok(Number(client.character.trainingPet?.[0]?.trainingTime ?? 0) > Math.floor(Date.now() / 1000));
+    assert.equal(client.character.pets?.[0]?.level, 3, 'training with gold should level the pet immediately');
+    assert.deepEqual(client.character.trainingPet, [], 'instant training should not leave a pending pet');
+
+    const completionPacket = client.sentPackets.find((packet) => packet.id === 0xEE);
+    assert.ok(completionPacket, 'instant training should notify the client that pet training completed');
+    const completionReader = new BitReader(completionPacket!.payload);
+    assert.equal(completionReader.readMethod6(7), 1, 'completion packet should identify the trained pet type');
 
     await withMockedCharacterSave(async () => {
         await PetHandler.handlePetTrainingCollect(client as never, Buffer.alloc(0));
     });
 
-    assert.equal(client.character.pets?.[0]?.level, 2, 'collect should fail before training is ready');
-    assert.equal(Number(client.character.trainingPet?.[0]?.typeID ?? 0), 1, 'training should remain active before ready');
-
-    client.character.trainingPet = [{
-        typeID: 1,
-        special_id: 10,
-        trainingTime: Math.floor(Date.now() / 1000) - 1
-    }];
-
-    await withMockedCharacterSave(async () => {
-        await PetHandler.handlePetTrainingCollect(client as never, Buffer.alloc(0));
-    });
-
-    assert.equal(client.character.pets?.[0]?.level, 3, 'collect should level the pet after training is ready');
-    assert.equal(Number(client.character.trainingPet?.[0]?.trainingTime ?? 0), 0, 'completed training should reset');
+    assert.equal(client.character.pets?.[0]?.level, 3, 'a delayed collect packet must not level the pet twice');
 }
 
 async function testEggHatchCannotBeCollectedBeforeReadyTimeAndRefreshesIdols(): Promise<void> {
@@ -171,10 +162,46 @@ async function testEggHatchCannotBeCollectedBeforeReadyTimeAndRefreshesIdols(): 
     assert.equal(Number(client.character.EggHachery?.EggID ?? 0), 0, 'hatchery should reset after collection');
 }
 
+async function testRankTwoEggHatchCapsAtSevenDays(): Promise<void> {
+    const client = createClient();
+    client.character.OwnedEggsID = [21];
+    const beforeStart = Math.floor(Date.now() / 1000);
+
+    await withMockedCharacterSave(async () => {
+        await PetHandler.handleEggHatch(client as never, createEggHatchPacket(0, false));
+    });
+
+    const readyTime = Number(client.character.EggHachery?.ReadyTime ?? 0);
+    assert.ok(readyTime >= beforeStart + PetConfig.EGG_HATCH_MAX_TIME);
+    assert.ok(
+        readyTime <= Math.floor(Date.now() / 1000) + PetConfig.EGG_HATCH_MAX_TIME + 5,
+        'rank two eggs should cap at seven days'
+    );
+}
+
+async function testRankOneEggHatchUsesFiveDays(): Promise<void> {
+    const client = createClient();
+    client.character.OwnedEggsID = [5];
+    const beforeStart = Math.floor(Date.now() / 1000);
+
+    await withMockedCharacterSave(async () => {
+        await PetHandler.handleEggHatch(client as never, createEggHatchPacket(0, false));
+    });
+
+    const readyTime = Number(client.character.EggHachery?.ReadyTime ?? 0);
+    assert.ok(readyTime >= beforeStart + (5 * 24 * 60 * 60));
+    assert.ok(
+        readyTime <= Math.floor(Date.now() / 1000) + (5 * 24 * 60 * 60) + 5,
+        'rank one rare eggs should hatch in five days'
+    );
+}
+
 async function main(): Promise<void> {
     PetConfig.load(path.resolve(__dirname, '..', 'data'));
-    await testPetTrainingCannotBeCollectedBeforeReadyTime();
+    await testPetTrainingWithGoldCompletesImmediately();
     await testEggHatchCannotBeCollectedBeforeReadyTimeAndRefreshesIdols();
+    await testRankTwoEggHatchCapsAtSevenDays();
+    await testRankOneEggHatchUsesFiveDays();
     console.log('pet_timing_idol_regression: ok');
 }
 

@@ -10,7 +10,6 @@ import {
   parseSwf,
   PatchError,
   writeSwf,
-  writeU30,
 } from "./swfPatchUtils";
 
 const DEFAULT_SWF = path.resolve(
@@ -48,7 +47,7 @@ function parseArgs(argv: string[]): { swfPath: string; verify: boolean } {
         "  ts-node src/server/scripts/patch-dungeonblitz-critical-chance-stat-display.ts [--verify] [--swf <path>]",
         "",
         "Patches DungeonBlitz.swf ScreenArmory so the Critical Chance stat page",
-        "formats gear/charm proc chance as +1.5% instead of +10%.",
+        "formats gear/charm proc chance as +16.5% instead of rounded +17%.",
       ].join("\n"));
       process.exit(0);
     }
@@ -94,27 +93,27 @@ function isGetLexMath(abc: ReturnType<typeof parseAbc>, inst: Instruction | unde
   return Boolean(inst && inst.opcode === 0x60 && multiname(abc, inst) === "Math");
 }
 
-function multinameIndexByName(abc: ReturnType<typeof parseAbc>, name: string): number {
-  const index = abc.multinameNames.findIndex((entry) => entry === name);
-  if (index < 0) {
-    throw new PatchError(`Could not find multiname ${name}.`);
-  }
-  return index;
-}
-
 function nops(count: number): Buffer {
   return Buffer.alloc(count, 0x02);
 }
 
-function buildRoundedScalePatch(abc: ReturnType<typeof parseAbc>, localBytes: Buffer): Buffer {
-  return Buffer.concat([
-    Buffer.from([0x60]),
-    writeU30(multinameIndexByName(abc, "Math")),
+function buildInventoryScalePatch(localBytes: Buffer, oldLen: number): Buffer {
+  const replacement = Buffer.concat([
     localBytes,
-    Buffer.from([0x24, 0x0f, 0xa2, 0x46]),
-    writeU30(multinameIndexByName(abc, "round")),
-    writeU30(1),
+    Buffer.from([0x24, 0x0f, 0xa2]),
   ]);
+  if (replacement.length > oldLen) {
+    throw new PatchError(`Unexpected Critical Chance replacement length: ${oldLen} -> ${replacement.length}`);
+  }
+  return Buffer.concat([replacement, nops(oldLen - replacement.length)]);
+}
+
+function isScaledInventoryDisplay(instructions: Instruction[], index: number): boolean {
+  return (
+    pushByteValue(instructions[index + 1]) === 15 &&
+    instructions[index + 2]?.opcode === 0xa2 &&
+    instructions[index + 3]?.opcode === 0x02
+  );
 }
 
 function getScreenArmoryMethodBodies(swfPath: string) {
@@ -175,7 +174,7 @@ function findCriticalChanceStatPatches(swfPath: string): { patches: BytePatch[];
         continue;
       }
 
-      if (isGetLexMath(abc, previousInst) && pushByteValue(scaleInst) === 15 && multiplyInst.opcode === 0xa2 && isRoundCall(abc, roundInst)) {
+      if (isScaledInventoryDisplay(instructions, index)) {
         patchedCount += 1;
         continue;
       }
@@ -184,7 +183,6 @@ function findCriticalChanceStatPatches(swfPath: string): { patches: BytePatch[];
         methodBody.codeStart + localInst.offset,
         methodBody.codeStart + localInst.offset + localInst.size,
       );
-      const roundedReplacement = buildRoundedScalePatch(abc, localBytes);
 
       if (
         pushByteValue(scaleInst) === 15 &&
@@ -206,23 +204,21 @@ function findCriticalChanceStatPatches(swfPath: string): { patches: BytePatch[];
           roundInst.size +
           instructions[index + 4].size +
           instructions[index + 5].size;
-        if (oldLen !== roundedReplacement.length) {
-          throw new PatchError(`Unexpected rounded Critical Chance replacement length: ${oldLen} -> ${roundedReplacement.length}`);
-        }
+        const scaledReplacement = buildInventoryScalePatch(localBytes, oldLen);
         oldCount += 1;
         patches.push({
-          key: `ScreenArmory.criticalChance.roundStaleScale.local${local}.${methodBody.codeStart + firstNop.offset}`,
+          key: `ScreenArmory.criticalChance.rawStaleScale.local${local}.${methodBody.codeStart + firstNop.offset}`,
           start: methodBody.codeStart + firstNop.offset,
           end: methodBody.codeStart + instructions[index + 5].offset + instructions[index + 5].size,
-          data: roundedReplacement,
-          detail: `round Critical Chance local ${local} after scaling by 15`,
+          data: scaledReplacement,
+          detail: `display Critical Chance local ${local} after scaling by 15`,
         });
         continue;
       }
 
       if (
         !isGetLexMath(abc, previousInst) ||
-        pushByteValue(scaleInst) !== 100 ||
+        (pushByteValue(scaleInst) !== 100 && pushByteValue(scaleInst) !== 15) ||
         multiplyInst.opcode !== 0xa2 ||
         !isRoundCall(abc, roundInst)
       ) {
@@ -230,17 +226,15 @@ function findCriticalChanceStatPatches(swfPath: string): { patches: BytePatch[];
       }
 
       const oldLen = previousInst.size + localInst.size + scaleInst.size + multiplyInst.size + roundInst.size;
-      if (oldLen !== roundedReplacement.length) {
-        throw new PatchError(`Unexpected rounded Critical Chance replacement length: ${oldLen} -> ${roundedReplacement.length}`);
-      }
+      const scaledReplacement = buildInventoryScalePatch(localBytes, oldLen);
 
       oldCount += 1;
       patches.push({
         key: `ScreenArmory.criticalChance.statScale.local${local}.${methodBody.codeStart + scaleInst.offset}`,
         start: methodBody.codeStart + previousInst.offset,
         end: methodBody.codeStart + roundInst.offset + roundInst.size,
-        data: roundedReplacement,
-        detail: `scale Critical Chance local ${local} by 15 and round the displayed percent`,
+        data: scaledReplacement,
+        detail: `scale Critical Chance local ${local} by 15 and keep the displayed decimal`,
       });
     }
   }

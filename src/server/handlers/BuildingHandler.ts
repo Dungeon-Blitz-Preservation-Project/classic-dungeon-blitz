@@ -27,6 +27,7 @@ const buildingDefsByKey = new Map<string, BuildingDef>(
 );
 
 export class BuildingHandler {
+    private static readonly MAX_BUILDING_UPGRADE_SECONDS = 4 * 24 * 60 * 60;
     private static readonly CRAFT_TOWN_REFRESH_RETRY_DELAYS_MS = [1200, 2800];
 
     private static rejectVisitedHomeMutation(client: Client, action: string): boolean {
@@ -115,6 +116,15 @@ export class BuildingHandler {
         return buildingDefsByKey.get(`${buildingId}:${rank}`) ?? null;
     }
 
+    private static getUpgradeTimeSeconds(rawUpgradeTime: unknown): number {
+        const seconds = Math.max(0, Math.round(Number(rawUpgradeTime ?? 0)));
+        if (seconds <= 0) {
+            return 0;
+        }
+
+        return Math.min(seconds, BuildingHandler.MAX_BUILDING_UPGRADE_SECONDS);
+    }
+
     static refreshCraftTownBuildingsOnSpawn(client: Client): void {
         if (!client.character || !client.playerSpawned || client.currentLevel !== 'CraftTown') {
             return;
@@ -187,7 +197,7 @@ export class BuildingHandler {
 
         const goldCost = Math.max(0, Math.round(Number(buildingDef.GoldCost ?? 0)));
         const idolCost = Math.max(0, Math.round(Number(buildingDef.IdolCost ?? 0)));
-        const upgradeTime = Math.max(0, Math.round(Number(buildingDef.UpgradeTime ?? 0)));
+        const upgradeTime = BuildingHandler.getUpgradeTimeSeconds(buildingDef.UpgradeTime);
 
         if (usedIdols) {
             const idols = Number(client.character.mammothIdols ?? 0);
@@ -403,7 +413,7 @@ export class BuildingHandler {
             9: BuildingID.NecromancerTower
          };
          const CLASS_TOWER_BUILDINGS: Record<string, number[]> = {
-            paladin: [BuildingID.JusticarTower, BuildingID.SentinelTower, BuildingID.TemplarTower],
+            paladin: [BuildingID.SentinelTower, BuildingID.JusticarTower, BuildingID.TemplarTower],
             mage: [BuildingID.FrostwardenTower, BuildingID.FlameseerTower, BuildingID.NecromancerTower],
             rogue: [BuildingID.ExecutionerTower, BuildingID.ShadowwalkerTower, BuildingID.SoulthiefTower]
          };

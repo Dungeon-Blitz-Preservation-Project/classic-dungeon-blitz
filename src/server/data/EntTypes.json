@@ -24836,8 +24836,8 @@
         "RewardClass": "NoLoot",
         "Realm": "Spirit",
         "Speed": "0",
-        "Width": "0",
-        "Height": "0",
+        "Width": "200",
+        "Height": "250",
         "Behavior": "SpawnerNephit",
         "SleepAnim": "Sleep"
       },
@@ -25004,8 +25004,8 @@
         "RewardClass": "NoLoot",
         "Realm": "Spirit",
         "Speed": "0",
-        "Width": "0",
-        "Height": "0",
+        "Width": "200",
+        "Height": "250",
         "Behavior": "SpawnerNephit",
         "SleepAnim": "Sleep"
       },

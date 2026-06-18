@@ -7,6 +7,7 @@ import { BitBuffer } from '../network/protocol/bitBuffer';
 import { BitReader } from '../network/protocol/bitReader';
 import { CharmID } from '../data/runtime/Charms';
 import { ConsumableID, ConsumableType } from '../data/runtime/Consumables';
+import { MissionID } from '../data/runtime';
 import { PetHandler } from './PetHandler';
 import { sendConsumableUpdate } from '../utils/ConsumableState';
 import { normalizeCharacterMaterials } from '../utils/MaterialInventory';
@@ -22,21 +23,30 @@ type ForgeState = {
     forge_roll_a: number;
     forge_roll_b: number;
     is_extended_forge: boolean;
+    free_speedup_reason?: string;
     stats_by_building: Record<string, number>;
     [key: string]: unknown;
 };
 
+type FreeSpeedupReason = 'tutorial_charm';
+
 export class ForgeHandler {
+    private static readonly MISSION_NOT_STARTED = 0;
+    private static readonly MISSION_CLAIMED = 3;
     private static readonly FORGE_REROLL_COSTS = [1, 2, 3, 4, 5, 7, 10, 13, 16, 20] as const;
-    private static readonly FORGE_DURATIONS_BY_SIZE = [1800, 4800, 10800, 21600, 36000, 64800, 96000, 144000, 192000, 288000] as const;
+    private static readonly FORGE_DURATIONS_BY_SIZE = [300, 900, 1800, 3600, 7200, 14400, 21600, 28800, 43200, 86400] as const;
     private static readonly FORGE_XP_BY_SIZE = [8, 22, 50, 101, 171, 310, 462, 697, 945, 1442] as const;
     private static readonly CRAFT_XP_MULTIPLIER = 0.03;
     private static readonly BASE_CRAFT_TIME_BONUS_PERCENT = 5;
     private static readonly CRAFT_TIME_BONUS_PER_POINT = 0.5;
     private static readonly TIME_REDUCTION_MULTIPLIER = 0.01;
-    private static readonly EXTENDED_FORGE_DURATION_SECONDS = 345600;
-    private static readonly RESPEC_STONE_BASE_DURATION_SECONDS = 180;
-    private static readonly CHARM_REMOVER_DURATION_SECONDS = 86400;
+    private static readonly RESPEC_STONE_DURATION_SECONDS = 180;
+    private static readonly EXTENDED_RESPEC_STONE_DURATION_SECONDS = 86400;
+    private static readonly CHARM_REMOVER_DURATION_SECONDS = 43200;
+    private static readonly SPEEDUP_SECONDS_PER_IDOL = 1200;
+    private static readonly FREE_SPEEDUP_THRESHOLD_SECONDS = 180;
+    private static readonly FREE_SPEEDUP_CLOCK_GRACE_SECONDS = 10;
+    private static readonly FREE_SPEEDUP_REASON_TUTORIAL_CHARM: FreeSpeedupReason = 'tutorial_charm';
     private static readonly FORGE_XP_CAP = 159_948;
     private static readonly DEFAULT_FORGE_XP_GAIN = 4000;
     private static readonly completionTimers = new Map<string, NodeJS.Timeout>();
@@ -62,6 +72,15 @@ export class ForgeHandler {
 
     private static getNowSeconds(): number {
         return Math.floor(Date.now() / 1000);
+    }
+
+    private static logForgeEvent(event: string, client: Client, details: Record<string, unknown> = {}): void {
+        console.log('[ForgeHandler]', event, {
+            userId: client.userId ?? null,
+            character: client.character?.name ?? null,
+            level: client.currentLevel ?? client.character?.CurrentLevel?.name ?? null,
+            ...details
+        });
     }
 
     private static getCompletionTimerKey(userId: number | null, characterName: string | null | undefined): string {
@@ -138,11 +157,11 @@ export class ForgeHandler {
         return Math.max(0, Math.min(totalBonus, 50));
     }
 
-    private static computeForgeDurationSeconds(character: any, primaryId: number, forgeFlags: { is_extended_forge: boolean }): number {
+    private static computeForgeDurationSeconds(character: any, primaryId: number): number {
         if (primaryId === CharmID.RespecStone) {
-            return forgeFlags.is_extended_forge
-                ? ForgeHandler.EXTENDED_FORGE_DURATION_SECONDS
-                : ForgeHandler.RESPEC_STONE_BASE_DURATION_SECONDS;
+            return ForgeHandler.hasUsedInitialRespecStoneForge(character)
+                ? ForgeHandler.EXTENDED_RESPEC_STONE_DURATION_SECONDS
+                : ForgeHandler.RESPEC_STONE_DURATION_SECONDS;
         }
 
         if (primaryId === CharmID.CharmRemover) {
@@ -271,6 +290,131 @@ export class ForgeHandler {
         return Math.max(1, Math.min(rawLevel || 1, ForgeHandler.FORGE_REROLL_COSTS.length));
     }
 
+    private static getFreeSpeedupUses(character: any): Record<string, boolean> {
+        if (!character.forgeFreeSpeedupUses || typeof character.forgeFreeSpeedupUses !== 'object' || Array.isArray(character.forgeFreeSpeedupUses)) {
+            character.forgeFreeSpeedupUses = {};
+        }
+
+        return character.forgeFreeSpeedupUses as Record<string, boolean>;
+    }
+
+    private static hasUsedFreeSpeedupReason(character: any, reason: FreeSpeedupReason): boolean {
+        return Boolean(ForgeHandler.getFreeSpeedupUses(character)[reason]);
+    }
+
+    private static markFreeSpeedupReasonUsed(character: any, reason: FreeSpeedupReason): void {
+        ForgeHandler.getFreeSpeedupUses(character)[reason] = true;
+    }
+
+    private static hasUsedInitialRespecStoneForge(character: any): boolean {
+        return Boolean(character?.forgeMilestones?.initial_respec_stone_crafted) ||
+            ForgeHandler.ownsPrimaryCharm(character, CharmID.RespecStone);
+    }
+
+    private static markInitialRespecStoneForgeUsed(character: any): void {
+        if (!character.forgeMilestones || typeof character.forgeMilestones !== 'object' || Array.isArray(character.forgeMilestones)) {
+            character.forgeMilestones = {};
+        }
+        character.forgeMilestones.initial_respec_stone_crafted = true;
+    }
+
+    private static getCharmPrimaryId(charmId: number): number {
+        return Math.max(0, Number(charmId ?? 0)) & 0x1FF;
+    }
+
+    private static ownsPrimaryCharm(character: any, primaryId: number): boolean {
+        const charms = Array.isArray(character?.charms) ? character.charms : [];
+        return charms.some((entry: any) =>
+            Number(entry?.count ?? 0) > 0 &&
+            ForgeHandler.getCharmPrimaryId(Number(entry?.charmID ?? 0)) === primaryId
+        );
+    }
+
+    private static getMissionState(character: any, missionId: number): number {
+        const missions = character?.missions && typeof character.missions === 'object' && !Array.isArray(character.missions)
+            ? character.missions as Record<string, any>
+            : {};
+        const entry = missions[String(missionId)];
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+            return ForgeHandler.MISSION_NOT_STARTED;
+        }
+
+        const state = Number(entry.state ?? ForgeHandler.MISSION_NOT_STARTED);
+        return Number.isFinite(state) ? state : ForgeHandler.MISSION_NOT_STARTED;
+    }
+
+    private static isCraftTownTutorialForgeContext(client: Client): boolean {
+        if (!client.character) {
+            return false;
+        }
+
+        const levelName = String(client.currentLevel || client.character?.CurrentLevel?.name || '').trim();
+        if (levelName !== 'CraftTown' && levelName !== 'CraftTownTutorial') {
+            return false;
+        }
+
+        if (Number(client.character?.questTrackerState ?? 0) < 100) {
+            return false;
+        }
+
+        const clearYourHouseState = ForgeHandler.getMissionState(client.character, MissionID.ClearYourHouse);
+        if (
+            clearYourHouseState <= ForgeHandler.MISSION_NOT_STARTED ||
+            clearYourHouseState >= ForgeHandler.MISSION_CLAIMED
+        ) {
+            return false;
+        }
+
+        const forgeState = ForgeHandler.ensureForgeState(client.character);
+        const stats = forgeState.stats_by_building ?? {};
+        const forgeRank = Number(stats['2'] ?? stats[2] ?? 0);
+        return forgeRank >= 1;
+    }
+
+    private static getNewForgeFreeSpeedupReason(client: Client, primaryId: number): FreeSpeedupReason | '' {
+        if (!client.character) {
+            return '';
+        }
+
+        if (
+            primaryId !== CharmID.RespecStone &&
+            primaryId !== CharmID.CharmRemover &&
+            !ForgeHandler.hasUsedFreeSpeedupReason(client.character, ForgeHandler.FREE_SPEEDUP_REASON_TUTORIAL_CHARM) &&
+            !ForgeHandler.ownsPrimaryCharm(client.character, primaryId) &&
+            ForgeHandler.isCraftTownTutorialForgeContext(client)
+        ) {
+            return ForgeHandler.FREE_SPEEDUP_REASON_TUTORIAL_CHARM;
+        }
+
+        return '';
+    }
+
+    private static getSpecialFreeSpeedupReason(client: Client, forgeState: ForgeState): FreeSpeedupReason | '' {
+        if (!client.character) {
+            return '';
+        }
+
+        const storedReason = String(forgeState.free_speedup_reason ?? '') as FreeSpeedupReason;
+        if (
+            storedReason === ForgeHandler.FREE_SPEEDUP_REASON_TUTORIAL_CHARM &&
+            !ForgeHandler.hasUsedFreeSpeedupReason(client.character, storedReason)
+        ) {
+            return storedReason;
+        }
+
+        return ForgeHandler.getNewForgeFreeSpeedupReason(client, Number(forgeState.primary ?? 0));
+    }
+
+    private static markCompletedForgeMilestones(character: any, forgeState: ForgeState): void {
+        const freeReason = String(forgeState.free_speedup_reason ?? '');
+        if (freeReason === ForgeHandler.FREE_SPEEDUP_REASON_TUTORIAL_CHARM) {
+            ForgeHandler.markFreeSpeedupReasonUsed(character, ForgeHandler.FREE_SPEEDUP_REASON_TUTORIAL_CHARM);
+        }
+        if (Number(forgeState.primary ?? 0) === CharmID.RespecStone) {
+            ForgeHandler.markInitialRespecStoneForgeUsed(character);
+        }
+    }
+
     private static randomRollSeed(): number {
         return Math.floor(Math.random() * 65536);
     }
@@ -284,6 +428,7 @@ export class ForgeHandler {
         forgeState.forge_roll_a = 0;
         forgeState.forge_roll_b = 0;
         forgeState.is_extended_forge = false;
+        forgeState.free_speedup_reason = '';
     }
 
     private static finalizeCompletedForgeIfNeeded(character: any): boolean {
@@ -295,6 +440,7 @@ export class ForgeHandler {
         }
 
         forgeState.ReadyTime = 0;
+        ForgeHandler.markCompletedForgeMilestones(character, forgeState);
         if (Number(forgeState.forge_roll_a ?? 0) === 0) {
             forgeState.forge_roll_a = ForgeHandler.randomRollSeed();
         }
@@ -308,6 +454,111 @@ export class ForgeHandler {
         return true;
     }
 
+    private static canUseFreeSpeedupWindow(forgeState: ForgeState): boolean {
+        const primary = Number(forgeState.primary ?? 0);
+        const readyTime = Number(forgeState.ReadyTime ?? 0);
+        if (primary <= 0 || readyTime <= 0) {
+            return false;
+        }
+
+        const remainingSeconds = readyTime - ForgeHandler.getNowSeconds();
+        return remainingSeconds > 0
+            && remainingSeconds <= ForgeHandler.FREE_SPEEDUP_THRESHOLD_SECONDS + ForgeHandler.FREE_SPEEDUP_CLOCK_GRACE_SECONDS;
+    }
+
+    private static getAuthoritativeSpeedupCost(forgeState: ForgeState): number {
+        const readyTime = Number(forgeState.ReadyTime ?? 0);
+        if (readyTime <= 0) {
+            return 0;
+        }
+
+        const remainingSeconds = readyTime - ForgeHandler.getNowSeconds();
+        if (remainingSeconds <= ForgeHandler.FREE_SPEEDUP_THRESHOLD_SECONDS) {
+            return 0;
+        }
+
+        return Math.ceil(remainingSeconds / ForgeHandler.SPEEDUP_SECONDS_PER_IDOL);
+    }
+
+    private static completeActiveForgeNow(forgeState: ForgeState): void {
+        forgeState.ReadyTime = 0;
+        forgeState.forge_roll_a = ForgeHandler.randomRollSeed();
+        forgeState.forge_roll_b = ForgeHandler.randomRollSeed();
+    }
+
+    private static enforceActiveRespecStoneDuration(client: Client, forgeState: ForgeState, context: string): boolean {
+        if (Number(forgeState.primary ?? 0) !== CharmID.RespecStone) {
+            return false;
+        }
+
+        const now = ForgeHandler.getNowSeconds();
+        const readyTime = Number(forgeState.ReadyTime ?? 0);
+        if (readyTime <= 0) {
+            return false;
+        }
+
+        const persistedDuration = Number(forgeState.respec_duration_seconds ?? 0);
+        const shouldUseExtendedDuration = Boolean(forgeState.is_extended_forge) ||
+            persistedDuration === ForgeHandler.EXTENDED_RESPEC_STONE_DURATION_SECONDS ||
+            ForgeHandler.hasUsedInitialRespecStoneForge(client.character);
+        const targetDuration = shouldUseExtendedDuration
+            ? ForgeHandler.EXTENDED_RESPEC_STONE_DURATION_SECONDS
+            : ForgeHandler.RESPEC_STONE_DURATION_SECONDS;
+        const startedAt = Number(forgeState.respec_started_time ?? 0);
+        if (shouldUseExtendedDuration && !forgeState.is_extended_forge) {
+            forgeState.is_extended_forge = true;
+            ForgeHandler.markInitialRespecStoneForgeUsed(client.character);
+        }
+        if (persistedDuration === targetDuration && startedAt > 0) {
+            return false;
+        }
+
+        const oldRemainingSeconds = readyTime - now;
+        if (oldRemainingSeconds > targetDuration) {
+            return false;
+        }
+
+        forgeState.respec_started_time = now;
+        forgeState.respec_duration_seconds = targetDuration;
+        forgeState.ReadyTime = now + targetDuration;
+
+        ForgeHandler.logForgeEvent('respec-duration-forced', client, {
+            context,
+            oldReadyTime: readyTime,
+            newReadyTime: forgeState.ReadyTime,
+            oldRemainingSeconds,
+            forcedDurationSeconds: targetDuration
+        });
+        return true;
+    }
+
+    private static enforceActiveCharmRemoverDuration(client: Client, forgeState: ForgeState, context: string): boolean {
+        if (Number(forgeState.primary ?? 0) !== CharmID.CharmRemover) {
+            return false;
+        }
+
+        const now = ForgeHandler.getNowSeconds();
+        const readyTime = Number(forgeState.ReadyTime ?? 0);
+        if (readyTime <= 0) {
+            return false;
+        }
+
+        const remainingSeconds = readyTime - now;
+        if (remainingSeconds <= ForgeHandler.CHARM_REMOVER_DURATION_SECONDS) {
+            return false;
+        }
+
+        forgeState.ReadyTime = now + ForgeHandler.CHARM_REMOVER_DURATION_SECONDS;
+        ForgeHandler.logForgeEvent('charm-remover-duration-forced', client, {
+            context,
+            oldReadyTime: readyTime,
+            newReadyTime: forgeState.ReadyTime,
+            oldRemainingSeconds: remainingSeconds,
+            forcedDurationSeconds: ForgeHandler.CHARM_REMOVER_DURATION_SECONDS
+        });
+        return true;
+    }
+
     static async syncCompletionState(client: Client): Promise<void> {
         if (!client.character) {
             return;
@@ -315,8 +566,12 @@ export class ForgeHandler {
 
         ForgeHandler.clearCompletionTimer(client.userId, client.character.name);
 
+        const initialForgeState = ForgeHandler.ensureForgeState(client.character);
+        const didForceRespecDuration = ForgeHandler.enforceActiveRespecStoneDuration(client, initialForgeState, 'sync');
+        const didForceCharmRemoverDuration = ForgeHandler.enforceActiveCharmRemoverDuration(client, initialForgeState, 'sync');
+
         const didFinalizeExpiredForge = ForgeHandler.finalizeCompletedForgeIfNeeded(client.character);
-        if (didFinalizeExpiredForge) {
+        if (didForceRespecDuration || didForceCharmRemoverDuration || didFinalizeExpiredForge) {
             await ForgeHandler.saveCharacter(client);
         }
 
@@ -443,10 +698,8 @@ export class ForgeHandler {
             sendConsumableUpdate(client, consumableId);
         }
 
-        const isExtendedForge = primary === CharmID.RespecStone;
-        const durationSeconds = ForgeHandler.computeForgeDurationSeconds(client.character, primary, {
-            is_extended_forge: isExtendedForge
-        });
+        const isExtendedForge = primary === CharmID.RespecStone && ForgeHandler.hasUsedInitialRespecStoneForge(client.character);
+        const durationSeconds = ForgeHandler.computeForgeDurationSeconds(client.character, primary);
         const readyTime = ForgeHandler.getNowSeconds() + durationSeconds;
         const { secondary, tier } = ForgeHandler.pickSecondaryRune(
             primary,
@@ -465,6 +718,24 @@ export class ForgeHandler {
         forgeState.forge_roll_a = 0;
         forgeState.forge_roll_b = 0;
         forgeState.is_extended_forge = isExtendedForge;
+        forgeState.free_speedup_reason = ForgeHandler.getNewForgeFreeSpeedupReason(client, primary);
+        if (primary === CharmID.RespecStone) {
+            forgeState.respec_started_time = ForgeHandler.getNowSeconds();
+            forgeState.respec_duration_seconds = durationSeconds;
+        } else {
+            delete forgeState.respec_started_time;
+            delete forgeState.respec_duration_seconds;
+        }
+
+        ForgeHandler.logForgeEvent('start-forge', client, {
+            primary,
+            isRespecStone: primary === CharmID.RespecStone,
+            durationSeconds,
+            readyTime,
+            remainingSeconds: readyTime - ForgeHandler.getNowSeconds(),
+            isExtendedForge,
+            freeSpeedupReason: forgeState.free_speedup_reason || ''
+        });
 
         await ForgeHandler.saveCharacter(client);
         await ForgeHandler.syncCompletionState(client);
@@ -478,7 +749,21 @@ export class ForgeHandler {
         const br = new BitReader(data);
         const idolCost = br.readMethod9();
         const forgeState = ForgeHandler.ensureForgeState(client.character);
+        const didForceRespecDuration = ForgeHandler.enforceActiveRespecStoneDuration(client, forgeState, 'speedup');
+        const didForceCharmRemoverDuration = ForgeHandler.enforceActiveCharmRemoverDuration(client, forgeState, 'speedup');
+        if (didForceRespecDuration || didForceCharmRemoverDuration) {
+            await ForgeHandler.saveCharacter(client);
+        }
+
+        ForgeHandler.logForgeEvent('speedup-received', client, {
+            primary: Number(forgeState.primary ?? 0),
+            idolCost,
+            readyTime: Number(forgeState.ReadyTime ?? 0),
+            remainingSeconds: Number(forgeState.ReadyTime ?? 0) - ForgeHandler.getNowSeconds()
+        });
+
         if (Number(forgeState.primary ?? 0) <= 0) {
+            ForgeHandler.logForgeEvent('speedup-ignored-empty-forge', client, { idolCost });
             return;
         }
 
@@ -490,19 +775,74 @@ export class ForgeHandler {
             return;
         }
 
-        if (idolCost <= 0 || Number(client.character.mammothIdols ?? 0) < idolCost) {
+        const primary = Number(forgeState.primary ?? 0);
+        const isRespecStone = primary === CharmID.RespecStone;
+        const authoritativeCost = isRespecStone
+            ? ForgeHandler.getAuthoritativeSpeedupCost(forgeState)
+            : idolCost;
+
+        if (isRespecStone) {
+            ForgeHandler.logForgeEvent('speedup-respec-authoritative-cost', client, {
+                clientIdolCost: idolCost,
+                authoritativeCost,
+                readyTime: Number(forgeState.ReadyTime ?? 0),
+                remainingSeconds: Number(forgeState.ReadyTime ?? 0) - ForgeHandler.getNowSeconds()
+            });
+        }
+
+        if (authoritativeCost <= 0) {
+            const freeSpeedupReason = ForgeHandler.getSpecialFreeSpeedupReason(client, forgeState);
+            if (!isRespecStone && !freeSpeedupReason && !ForgeHandler.canUseFreeSpeedupWindow(forgeState)) {
+                ForgeHandler.logForgeEvent('speedup-blocked-free-window', client, {
+                    idolCost,
+                    primary,
+                    readyTime: Number(forgeState.ReadyTime ?? 0),
+                    remainingSeconds: Number(forgeState.ReadyTime ?? 0) - ForgeHandler.getNowSeconds()
+                });
+                return;
+            }
+
+            ForgeHandler.clearCompletionTimer(client.userId, client.character.name);
+            if (freeSpeedupReason) {
+                forgeState.free_speedup_reason = freeSpeedupReason;
+                ForgeHandler.markFreeSpeedupReasonUsed(client.character, freeSpeedupReason);
+            }
+            ForgeHandler.markCompletedForgeMilestones(client.character, forgeState);
+            ForgeHandler.completeActiveForgeNow(forgeState);
+            await ForgeHandler.saveCharacter(client);
+            ForgeHandler.logForgeEvent('speedup-completed', client, {
+                primary,
+                clientIdolCost: idolCost,
+                chargedIdols: 0,
+                mammothIdols: Number(client.character.mammothIdols ?? 0)
+            });
+            ForgeHandler.sendForgeResultPacket(client, forgeState);
+            return;
+        }
+
+        if (Number(client.character.mammothIdols ?? 0) < authoritativeCost) {
+            ForgeHandler.logForgeEvent('speedup-blocked-idols', client, {
+                clientIdolCost: idolCost,
+                authoritativeCost,
+                mammothIdols: Number(client.character.mammothIdols ?? 0)
+            });
             return;
         }
 
         ForgeHandler.clearCompletionTimer(client.userId, client.character.name);
-        client.character.mammothIdols = Number(client.character.mammothIdols ?? 0) - idolCost;
-        ForgeHandler.sendPremiumPurchase(client, 'Forge Speed-Up', idolCost);
+        client.character.mammothIdols = Number(client.character.mammothIdols ?? 0) - authoritativeCost;
+        ForgeHandler.sendPremiumPurchase(client, 'Forge Speed-Up', authoritativeCost);
 
-        forgeState.ReadyTime = 0;
-        forgeState.forge_roll_a = ForgeHandler.randomRollSeed();
-        forgeState.forge_roll_b = ForgeHandler.randomRollSeed();
+        ForgeHandler.markCompletedForgeMilestones(client.character, forgeState);
+        ForgeHandler.completeActiveForgeNow(forgeState);
 
         await ForgeHandler.saveCharacter(client);
+        ForgeHandler.logForgeEvent('speedup-completed', client, {
+            primary,
+            clientIdolCost: idolCost,
+            chargedIdols: authoritativeCost,
+            mammothIdols: Number(client.character.mammothIdols ?? 0)
+        });
         ForgeHandler.sendForgeResultPacket(client, forgeState);
     }
 
@@ -512,6 +852,12 @@ export class ForgeHandler {
         }
 
         const forgeState = ForgeHandler.ensureForgeState(client.character);
+        const didForceRespecDuration = ForgeHandler.enforceActiveRespecStoneDuration(client, forgeState, 'collect');
+        const didForceCharmRemoverDuration = ForgeHandler.enforceActiveCharmRemoverDuration(client, forgeState, 'collect');
+        if (didForceRespecDuration || didForceCharmRemoverDuration) {
+            await ForgeHandler.saveCharacter(client);
+        }
+
         if (Number(forgeState.primary ?? 0) <= 0) {
             return;
         }
@@ -548,6 +894,7 @@ export class ForgeHandler {
             client.character.craftXP = Math.max(0, Number(client.character.craftXP ?? 0) + xpGain);
         }
 
+        ForgeHandler.markCompletedForgeMilestones(client.character, forgeState);
         ForgeHandler.resetForgeState(forgeState);
         await ForgeHandler.saveCharacter(client);
     }

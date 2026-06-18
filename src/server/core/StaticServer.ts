@@ -45,8 +45,8 @@ export class StaticServer {
     private host: string;
     private selectedSwfCache: { key: string; buffer: Buffer } | null;
     private readonly discordAccountLinks: DiscordAccountLinkService;
-    private readonly flashVersion = 'cbw';
-    private readonly gameVersion = 'cbv';
+    private readonly flashVersion = 'cdb';
+    private readonly gameVersion = 'cdb';
 
     constructor(
         port: number = Config.STATIC_PORT,
@@ -317,6 +317,14 @@ export class StaticServer {
             res.sendFile(swzPath);
         });
 
+        this.app.get('/p/:assetVersion/Game.swz', (req, res) => {
+            const locale = this.resolveGameSwzLocale(req);
+            const swzPath = this.getGameSwzPathForLocale(locale);
+            res.type('application/x-shockwave-flash');
+            res.setHeader('X-DungeonBlitz-Language', locale);
+            res.sendFile(swzPath);
+        });
+
         this.app.get('/DungeonBlitzRemote.swf', (req, res) => {
             const locale = this.resolveSwfLocale(req);
             res.type('application/x-shockwave-flash');
@@ -327,14 +335,6 @@ export class StaticServer {
         this.app.get('/p/cbq/devSettings.xml', (_req, res) => {
             res.type('application/xml');
             res.send(this.renderDevSettings(devSettingsPath));
-        });
-
-        this.app.get(`/p/${this.flashVersion}/Game.swz`, (req, res) => {
-            const locale = this.resolveGameSwzLocale(req);
-            const swzPath = this.getGameSwzPathForLocale(locale);
-            res.type('application/x-shockwave-flash');
-            res.setHeader('X-DungeonBlitz-Language', locale);
-            res.sendFile(swzPath);
         });
 
         this.app.use(`/p/${this.flashVersion}`, (req, res, next) => {

@@ -37,7 +37,8 @@ function usage() {
     '  node src/server/scripts/patch-levelsjc-ring-of-fire-boss-cutscene-gate.js [--verify] [--swf <path>] [--ffdec <path>]',
     '',
     'Patches LevelsJC a_Room_JCMission11_09 so the Ring Of Fire boss',
-    'waits for the boss intro cutscene to finish before engaging.'
+    'waits for the boss intro cutscene to finish, then starts its',
+    'active combat phase for summons and rage buffs.'
   ].join('\n'));
 }
 
@@ -147,6 +148,11 @@ function replaceMethod(source, methodName, replacement) {
   return `${source.slice(0, range.start)}${replacement}${source.slice(range.end)}`;
 }
 
+function getMethodSource(source, methodName) {
+  const range = findMethodRange(source, methodName);
+  return source.slice(range.start, range.end);
+}
+
 function normalizeBlock(block, eol) {
   return block.trim().replace(/\n/g, eol);
 }
@@ -243,7 +249,7 @@ function patchRoomSource(source) {
          }
          this.ReleaseBossIntro();
          param1.bossFightPhase = this.UpdateBossFight;
-         param1.SetPhase(null);
+         param1.SetPhase(this.UpdateBossFight);
       }
   `, eol);
 
@@ -291,14 +297,21 @@ function verifyRoomSource(source, label) {
     'public function UpdateBossIntroGate(param1:a_GameHook) : void',
     'param1.OnScriptFinish(param1.cutSceneStartBoss)',
     'param1.AtTime(16000)',
-    'param1.bossFightPhase = this.UpdateBossFight;',
-    'param1.SetPhase(null);'
+    'param1.bossFightPhase = this.UpdateBossFight;'
   ];
 
   for (const marker of required) {
     if (!source.includes(marker)) {
       throw new Error(`${label} is missing required marker: ${marker}`);
     }
+  }
+
+  const gateSource = getMethodSource(source, 'UpdateBossIntroGate');
+  if (!gateSource.includes('param1.SetPhase(this.UpdateBossFight);')) {
+    throw new Error(`${label} does not start Davan's active combat phase after the intro gate`);
+  }
+  if (gateSource.includes('param1.SetPhase(null);')) {
+    throw new Error(`${label} still clears Davan's active phase after the intro gate`);
   }
 }
 

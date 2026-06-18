@@ -81,6 +81,12 @@ function getDyeRarity(dyeId: number): string {
     return String(GameData.DYES.find((dye) => dye.id === dyeId)?.rarity ?? '');
 }
 
+function getLegendaryDyeIds(): number[] {
+    return GameData.DYES
+        .filter((dye) => String(dye.rarity).toUpperCase() === 'L')
+        .map((dye) => dye.id);
+}
+
 function buildGrantRewardPayload(sourceId: number): Buffer {
     const bb = new BitBuffer(false);
     bb.writeMethod4(0);
@@ -202,6 +208,34 @@ async function testHardBossRewardCanDropLegendaryDye(): Promise<void> {
     assert.equal(getDyeRarity(dyeId), 'L', 'hard mode should allow legendary dye drops');
 }
 
+async function testHardBossRewardDoesNotDuplicateOwnedLegendaryDyes(): Promise<void> {
+    ensureGameDataLoaded();
+
+    const alpha = createFakeClient(4, 'Gamma');
+    alpha.currentLevel = 'GoblinRiverDungeonHard';
+    alpha.character.OwnedDyes = getLegendaryDyeIds();
+    assert.ok(alpha.character.OwnedDyes.length > 0, 'test data should include legendary dyes');
+    GlobalState.sessionsByToken.set(alpha.token, alpha as never);
+
+    const sourceId = 9300;
+    addLevelEntity(alpha, {
+        id: sourceId,
+        name: 'GoblinBoss1Hard',
+        isPlayer: false,
+        team: 2,
+        x: 120,
+        y: 220
+    });
+    setContributors(getClientLevelScope(alpha as never), sourceId, ['gamma']);
+
+    await withMockedRandom([0.0, 0.99, 0.99, 0.99, 0.99, 0.99, 0.2, 0.3, 0.4], async () => {
+        await RewardHandler.handleGrantReward(alpha as never, buildGrantRewardPayload(sourceId));
+    });
+
+    const dyeEntry = Array.from(alpha.pendingLoot.entries()).find(([, reward]) => Number(reward?.dye ?? 0) > 0);
+    assert.equal(dyeEntry, undefined, 'hard mode boss reward should not queue duplicate legendary dye loot');
+}
+
 async function main(): Promise<void> {
     const sessionsByToken = new Map(GlobalState.sessionsByToken);
     const levelEntities = new Map(GlobalState.levelEntities);
@@ -217,6 +251,11 @@ async function main(): Promise<void> {
         GlobalState.levelEntities.clear();
         GlobalState.combatContributions.clear();
         await testHardBossRewardCanDropLegendaryDye();
+
+        GlobalState.sessionsByToken.clear();
+        GlobalState.levelEntities.clear();
+        GlobalState.combatContributions.clear();
+        await testHardBossRewardDoesNotDuplicateOwnedLegendaryDyes();
         console.log('reward_dye_drop_regression: ok');
     } finally {
         GlobalState.sessionsByToken = sessionsByToken;

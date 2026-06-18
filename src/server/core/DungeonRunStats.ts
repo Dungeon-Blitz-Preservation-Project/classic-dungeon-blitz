@@ -198,6 +198,8 @@ type DungeonRunEntityKind = {
     objective: boolean;
 };
 
+type DungeonRunEntityContext = Pick<DungeonRunStats, 'levelName' | 'scoreMode' | 'bossCutsceneTriggeredAt'> | string | null | undefined;
+
 type DungeonRunFinalizeOptions = {
     completionPercent?: number;
     dungeonCompleted?: boolean;
@@ -390,8 +392,44 @@ function createZeroBudget(): DungeonRunScoreBudget {
     };
 }
 
-function classifyDungeonRunEntity(entity: any): DungeonRunEntityKind {
+const YORNAK_DUNGEON_LEVELS = new Set<string>(['SRN_Mission2', 'SRN_Mission2Hard']);
+
+function getDungeonRunEntityContextLevel(context: DungeonRunEntityContext): string {
+    return typeof context === 'string'
+        ? LevelConfig.normalizeLevelName(context)
+        : LevelConfig.normalizeLevelName(context?.levelName);
+}
+
+function isYornakBossRunContext(context: DungeonRunEntityContext): boolean {
+    if (!context || typeof context === 'string') {
+        return false;
+    }
+
+    return context.scoreMode === 'boss_run' || context.bossCutsceneTriggeredAt !== null;
+}
+
+function shouldIgnoreDungeonRunEntity(classification: ReturnType<typeof classifyDungeonStatsEntity>, context: DungeonRunEntityContext): boolean {
+    if (!YORNAK_DUNGEON_LEVELS.has(getDungeonRunEntityContextLevel(context))) {
+        return false;
+    }
+
+    if (!isYornakBossRunContext(context)) {
+        return false;
+    }
+
+    return classification.chest || (classification.hostile && !classification.boss);
+}
+
+function classifyDungeonRunEntity(entity: any, context?: DungeonRunEntityContext): DungeonRunEntityKind {
     const classification = classifyDungeonStatsEntity(entity);
+    if (shouldIgnoreDungeonRunEntity(classification, context)) {
+        return {
+            enemy: false,
+            boss: false,
+            chest: false,
+            objective: false
+        };
+    }
 
     return {
         enemy: classification.hostile,
@@ -482,12 +520,19 @@ function classifyDungeonRun(
     return 'objective_clear';
 }
 
-function noteAccumulatorEntity(accumulator: DungeonRunAccumulator, entityId: number, entity: any, dungeonCompleted: boolean, completionPercent: number): void {
+function noteAccumulatorEntity(
+    accumulator: DungeonRunAccumulator,
+    entityId: number,
+    entity: any,
+    dungeonCompleted: boolean,
+    completionPercent: number,
+    context?: DungeonRunEntityContext
+): void {
     if (!entityId || !entity) {
         return;
     }
 
-    const kind = classifyDungeonRunEntity(entity);
+    const kind = classifyDungeonRunEntity(entity, context);
     if (kind.enemy) {
         accumulator.eligibleEnemyIds.add(entityId);
     }
@@ -625,7 +670,7 @@ function createDungeonRunStats(client: Client, levelName: string, levelScope: st
     recordDungeonRunEvent(stats, 'entry');
 
     for (const npc of NpcLoader.getRawNpcsForLevel(levelName)) {
-        noteAccumulatorEntity(entryAccumulator, Number(npc?.id ?? 0), npc, stats.dungeonCompleted, stats.completionPercent);
+        noteAccumulatorEntity(entryAccumulator, Number(npc?.id ?? 0), npc, stats.dungeonCompleted, stats.completionPercent, levelName);
     }
     refreshAccumulatorFields(windowAccumulator, stats.dungeonCompleted, stats.completionPercent);
     syncStatsFromAccumulator(stats);
@@ -821,7 +866,7 @@ function activateBossRunScoreWindow(stats: DungeonRunStats, client: Client, room
         if (!sharesRoomIds(roomId, Number(entity?.roomId ?? roomId))) {
             continue;
         }
-        noteAccumulatorEntity(stats.windowAccumulator, entityId, entity, stats.dungeonCompleted, stats.completionPercent);
+        noteAccumulatorEntity(stats.windowAccumulator, entityId, entity, stats.dungeonCompleted, stats.completionPercent, stats);
     }
 
     if (bossId && !stats.windowAccumulator.eligibleEnemyIds.has(bossId)) {
@@ -829,7 +874,7 @@ function activateBossRunScoreWindow(stats: DungeonRunStats, client: Client, room
             client.entities.get(bossId) ??
             Array.from(client.entities.values()).find((entity) => Number(entity?.id ?? 0) === bossId);
         if (bossEntity) {
-            noteAccumulatorEntity(stats.windowAccumulator, bossId, bossEntity, stats.dungeonCompleted, stats.completionPercent);
+            noteAccumulatorEntity(stats.windowAccumulator, bossId, bossEntity, stats.dungeonCompleted, stats.completionPercent, stats);
         }
     }
 
@@ -896,8 +941,8 @@ function forceBossRoomScoreWindow(stats: DungeonRunStats, client: Client, roomId
     }
 
     for (const [entityId, entity] of roomEntities.entries()) {
-        noteAccumulatorEntity(stats.windowAccumulator, entityId, entity, stats.dungeonCompleted, stats.completionPercent);
-        const kind = classifyDungeonRunEntity(entity);
+        noteAccumulatorEntity(stats.windowAccumulator, entityId, entity, stats.dungeonCompleted, stats.completionPercent, stats);
+        const kind = classifyDungeonRunEntity(entity, stats);
         if (kind.enemy && (previousKilledEnemyIds.has(entityId) || isDungeonRunEntityDefeated(entity))) {
             stats.windowAccumulator.killedEnemyIds.add(entityId);
         }
@@ -932,10 +977,10 @@ function noteDungeonRunEntity(stats: DungeonRunStats, entityId: number, entity: 
     recordDungeonRunEvent(stats, 'entity_seen', {
         entityId
     });
-    noteAccumulatorEntity(stats.entryAccumulator, entityId, entity, stats.dungeonCompleted, stats.completionPercent);
+    noteAccumulatorEntity(stats.entryAccumulator, entityId, entity, stats.dungeonCompleted, stats.completionPercent, stats.levelName);
     const target = getTargetAccumulator(stats);
     if (target !== stats.entryAccumulator) {
-        noteAccumulatorEntity(target, entityId, entity, stats.dungeonCompleted, stats.completionPercent);
+        noteAccumulatorEntity(target, entityId, entity, stats.dungeonCompleted, stats.completionPercent, stats);
     }
     if (stats.scoreMode !== 'pending') {
         syncStatsFromAccumulator(stats);
@@ -1064,7 +1109,7 @@ export function noteDungeonRunHit(client: Client, context: DungeonRunHitContext)
     }
 
     noteDungeonRunEntity(stats, context.targetId, context.targetEntity);
-    const kind = classifyDungeonRunEntity(context.targetEntity);
+    const kind = classifyDungeonRunEntity(context.targetEntity, stats);
     if (!kind.enemy && !kind.objective) {
         return;
     }
@@ -1119,7 +1164,7 @@ export function noteDungeonRunChestOpened(client: Client, sourceId: number, sour
     }
 
     noteDungeonRunEntity(stats, sourceId, sourceEntity);
-    const kind = classifyDungeonRunEntity(sourceEntity);
+    const kind = classifyDungeonRunEntity(sourceEntity, stats);
     if (!kind.chest) {
         return;
     }
@@ -1215,7 +1260,7 @@ export function noteDungeonRunKill(
         if (stats && stats.levelScope === normalizedScope) {
             if (entityId && entity) {
                 noteDungeonRunEntity(stats, entityId, entity);
-                const kind = classifyDungeonRunEntity(entity);
+                const kind = classifyDungeonRunEntity(entity, stats);
                 if (stats.scoreMode === 'pending' && kind.boss && !stats.preBossEncounterEngaged) {
                     activateBossRunScoreWindow(stats, session, session.currentRoomId, entityId);
                 } else if (stats.scoreMode === 'pending' && shouldPromotePendingRunForEntity(kind)) {

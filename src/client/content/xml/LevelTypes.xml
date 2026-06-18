@@ -593,7 +593,7 @@
 	</LevelType>
 	<LevelType LevelName="BT_Mission1Hard">
 		<ZoneSet>BridgeTownHard</ZoneSet>
-		<DisplayName>dehset Bandit Camp</DisplayName>
+		<DisplayName>Dread Bandit Camp</DisplayName>
 		<RankingsURL>dread/bandit</RankingsURL>
 		<MusicLoop>OminousDungeonLongLoopWithSomeDrama_29.mp3</MusicLoop>
 	</LevelType>

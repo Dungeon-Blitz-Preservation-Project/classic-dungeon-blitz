@@ -498,6 +498,7 @@
 	<MissionType>
 		<MissionName>SlayMindlessQueen</MissionName>
 		<MissionID>24</MissionID>
+		<PreReqMissions>StopBroodvictor</PreReqMissions>
 		<ZoneSet>SwampRoadNorth</ZoneSet>
 		<Priority>Dungeon</Priority>
 		<ContactName>Odem</ContactName>
@@ -2656,6 +2657,7 @@
 	<MissionType>
 		<MissionName>SlayMindlessQueenHard</MissionName>
 		<MissionID>134</MissionID>
+		<PreReqMissions>StopBroodvictorHard</PreReqMissions>
 		<ZoneSet>SwampRoadNorthHard</ZoneSet>
 		<Priority>Dungeon</Priority>
 		<ContactName>OdemHard</ContactName>

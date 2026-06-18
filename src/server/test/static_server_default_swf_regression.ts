@@ -16,19 +16,19 @@ function testStaticServerServesSingleSwfByDefault(): void {
     const selectedSwfUrl = (server as any).getSelectedSwfUrl() as string;
 
     assert.equal(path.basename(selectedSwfPath), 'DungeonBlitz.swf');
-    assert.equal(selectedSwfUrl, '/p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv');
+    assert.equal(selectedSwfUrl, '/p/cbp/DungeonBlitz.swf?fv=cdb&gv=cdb');
     assert.equal(fs.existsSync(selectedSwfPath), true);
 }
 
 function testStaticServerCanonicalizesDirectSwfVersionParams(): void {
     const server = new StaticServer();
     const staleRequest = {
-        query: { fv: 'cbw', gv: 'cbw', lang: 'tr' },
+        query: { fv: 'cbx', gv: 'cbx', lang: 'tr' },
         headers: {},
         socket: { remoteAddress: '127.0.0.1' }
     };
     const canonicalRequest = {
-        query: { fv: 'cbw', gv: 'cbv' },
+        query: { fv: 'cdb', gv: 'cdb' },
         headers: {},
         socket: { remoteAddress: '127.0.0.1' }
     };
@@ -37,7 +37,7 @@ function testStaticServerCanonicalizesDirectSwfVersionParams(): void {
     assert.equal((server as any).isCanonicalSelectedSwfRequest(canonicalRequest), true);
     assert.equal(
         (server as any).getCanonicalSelectedSwfUrl(staleRequest),
-        '/p/cbp/DungeonBlitz.swf?fv=cbw&gv=cbv&lang=tr'
+        '/p/cbp/DungeonBlitz.swf?fv=cdb&gv=cdb&lang=tr'
     );
 }
 
@@ -60,6 +60,16 @@ function testStaticServerSelectsLocalizedGameSwz(): void {
     assert.equal(path.basename(turkishPath), 'Game.tr.swz');
     assert.equal(fs.existsSync(englishPath), true);
     assert.equal(fs.existsSync(turkishPath), true);
+}
+
+function testStaticServerAliasesVersionedGameSwzRequests(): void {
+    const server = new StaticServer();
+    const gameSwzRoute = (server as any).app.router.stack.find((layer: any) => {
+        return layer.route?.path === '/p/:assetVersion/Game.swz';
+    });
+
+    assert.ok(gameSwzRoute, 'Static server should alias versioned Game.swz requests such as /p/cdb/Game.swz');
+    assert.equal(gameSwzRoute.route?.methods?.get, true);
 }
 
 function testStaticServerAliasesCurrentFlashVersionManifest(): void {
@@ -100,6 +110,8 @@ function testBrowserEmbedUsesOriginalGameViewport(): void {
     assert.equal(indexHtml.includes('syncGameStageSize'), false, 'Flash host must not run edge-offset canvas resync logic');
     assert.equal(/swfobject\.embedSWF\([\s\S]*"100%",\s*\r?\n\s*"100%"/.test(indexHtml), true, 'DungeonBlitz SWF must fill the centered fitted viewport');
     assert.equal(/swfobject\.embedSWF\([\s\S]*"1152",\s*\r?\n\s*"768"/.test(indexHtml), false, 'DungeonBlitz SWF must not force an oversized authored viewport in short FlashBrowser windows');
+    assert.equal(indexHtml.includes('DungeonBlitz.swf?fv=cdb&gv=cdb'), true, 'Flash host must request the current cache-busted SWF URL');
+    assert.equal(indexHtml.includes('{ fv: "cdb", gv: "cdb" }'), true, 'Flash vars must match the current cache-busted SWF URL');
 }
 
 function testStaticServerResolvesGameSwzLocaleFromRequest(): void {
@@ -156,6 +168,7 @@ function main(): void {
     testStaticServerCanonicalizesDirectSwfVersionParams();
     testStaticServerRootServesIndexHtml();
     testStaticServerSelectsLocalizedGameSwz();
+    testStaticServerAliasesVersionedGameSwzRequests();
     testStaticServerAliasesCurrentFlashVersionManifest();
     testBrowserEmbedUsesOriginalGameViewport();
     testStaticServerResolvesGameSwzLocaleFromRequest();

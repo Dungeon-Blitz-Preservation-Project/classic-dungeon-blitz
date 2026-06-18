@@ -143,6 +143,11 @@ function hasResetAfterMethod904(abc: ReturnType<typeof parseAbc>, instructions: 
   );
 }
 
+export function hasRangedOverrideVisualReset(swfPath: string): boolean {
+  const { abc, code } = getEntityMethod993(swfPath);
+  return hasResetAfterMethod904(abc, disassemble(code, "Entity.method_993"));
+}
+
 function patchBranchesForInsertion(code: Buffer, instructions: Instruction[], insertAt: number, delta: number): Buffer {
   const patched = Buffer.from(code);
   for (const inst of instructions) {

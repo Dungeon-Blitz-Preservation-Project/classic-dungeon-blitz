@@ -54,7 +54,7 @@
 		<PlayerLevel>10</PlayerLevel>
 		<GoldCost>32867</GoldCost>
 		<IdolCost>17</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tome_3</Art>
 		<UpgradeDescription>Tum Kademe 4 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -64,7 +64,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tome_4</Art>
 		<UpgradeDescription>Tum Kademe 5 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -74,7 +74,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tome_5</Art>
 		<UpgradeDescription>Tum Kademe 6 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -84,7 +84,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tome_6</Art>
 		<UpgradeDescription>Tum Kademe 7 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -94,7 +94,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tome_7</Art>
 		<UpgradeDescription>Tum Kademe 8 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -104,7 +104,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tome_8</Art>
 		<UpgradeDescription>Tum Kademe 9 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -114,7 +114,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tome_9</Art>
 		<UpgradeDescription>Tum Kademe 10 yeteneklerinin egitimini acar</UpgradeDescription>
 	</Building>
@@ -124,7 +124,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tome_Final</Art>
 	</Building>
 	<Building BuildingName="Forge">
@@ -166,7 +166,7 @@
 		<PlayerLevel>10</PlayerLevel>
 		<GoldCost>32867</GoldCost>
 		<IdolCost>17</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Forge_3</Art>
 		<UpgradeDescription>Kademe 4 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -176,7 +176,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Forge_4</Art>
 		<UpgradeDescription>Kademe 5 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -186,7 +186,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Forge_5</Art>
 		<UpgradeDescription>Kademe 6 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -196,7 +196,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Forge_6</Art>
 		<UpgradeDescription>Kademe 7 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -206,7 +206,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Forge_7</Art>
 		<UpgradeDescription>Kademe 8 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -216,7 +216,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Forge_8</Art>
 		<UpgradeDescription>Kademe 9 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -226,7 +226,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Forge_9</Art>
 		<UpgradeDescription>Kademe 10 tilsim tariflerini acar</UpgradeDescription>
 	</Building>
@@ -236,7 +236,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Forge_Final</Art>
 	</Building>
 	<Building BuildingName="JusticarTower">
@@ -278,7 +278,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -288,7 +288,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -298,7 +298,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar5</Art>
 		<BackgroundArt>a_Upgrade_ConduitBarbarian_5</BackgroundArt>
 		<UpgradeIcon>a_BuildingIcon_frostwarden1</UpgradeIcon>
@@ -310,7 +310,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -320,7 +320,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -330,7 +330,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -340,7 +340,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Justicar9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -350,7 +350,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_JusticarFinal</Art>
 		<BackgroundArt>a_Upgrade_ConduitBarbarian_10</BackgroundArt>
 		<UpgradeIcon>a_BuildingIcon_frostwarden1</UpgradeIcon>
@@ -392,7 +392,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -402,7 +402,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -412,7 +412,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -422,7 +422,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -432,7 +432,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -442,7 +442,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -452,7 +452,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Sentinel9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -462,7 +462,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_SentinelFinal</Art>
 	</Building>
 	<Building BuildingName="TemplarTower">
@@ -504,7 +504,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -514,7 +514,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -524,7 +524,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -534,7 +534,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -544,7 +544,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -554,7 +554,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -564,7 +564,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Templar9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -574,7 +574,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_TemplarFinal</Art>
 	</Building>
 	<Building BuildingName="FrostwardenTower">
@@ -616,7 +616,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -626,7 +626,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -636,7 +636,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -646,7 +646,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -656,7 +656,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -666,7 +666,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -676,7 +676,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Frostwarden9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -686,7 +686,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_FrostwardenFinal</Art>
 	</Building>
 	<Building BuildingName="FlameseerTower">
@@ -728,7 +728,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -738,7 +738,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -748,7 +748,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -758,7 +758,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -768,7 +768,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -778,7 +778,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -788,7 +788,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Flameseer9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -798,7 +798,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_FlameseerFinal</Art>
 	</Building>
 	<Building BuildingName="NecromancerTower">
@@ -840,7 +840,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -850,7 +850,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -860,7 +860,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -870,7 +870,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -880,7 +880,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -890,7 +890,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -900,7 +900,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Necromancer9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -910,7 +910,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_NecromancerFinal</Art>
 	</Building>
 	<Building BuildingName="ExecutionerTower">
@@ -952,7 +952,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -962,7 +962,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -972,7 +972,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -982,7 +982,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -992,7 +992,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1002,7 +1002,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1012,7 +1012,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Executioner9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1022,7 +1022,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_ExecutionerFinal</Art>
 	</Building>
 	<Building BuildingName="ShadowwalkerTower">
@@ -1064,7 +1064,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1074,7 +1074,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1084,7 +1084,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1094,7 +1094,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1104,7 +1104,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1114,7 +1114,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1124,7 +1124,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Shadowwalker9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1134,7 +1134,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_ShadowwalkerFinal</Art>
 	</Building>
 	<Building BuildingName="SoulthiefTower">
@@ -1176,7 +1176,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster3</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1186,7 +1186,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster4</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1196,7 +1196,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster5</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1206,7 +1206,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster6</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1216,7 +1216,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster7</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1226,7 +1226,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster8</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1236,7 +1236,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Tower_Blademaster9</Art>
 		<UpgradeDescription>Sonraki 5 yetenek puaninin egitimini acar</UpgradeDescription>
 	</Building>
@@ -1246,7 +1246,7 @@
 		<PlayerLevel>50</PlayerLevel>
 		<GoldCost>8155866</GoldCost>
 		<IdolCost>299</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Tower_BlademasterFinal</Art>
 	</Building>
 	<Building BuildingName="Keep">
@@ -1301,7 +1301,7 @@
 		<PlayerLevel>10</PlayerLevel>
 		<GoldCost>32867</GoldCost>
 		<IdolCost>17</IdolCost>
-		<UpgradeTime>49200</UpgradeTime>
+		<UpgradeTime>43200</UpgradeTime>
 		<Art>a_Upgrade_Barn_3</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1311,7 +1311,7 @@
 		<PlayerLevel>15</PlayerLevel>
 		<GoldCost>91888</GoldCost>
 		<IdolCost>39</IdolCost>
-		<UpgradeTime>142800</UpgradeTime>
+		<UpgradeTime>86400</UpgradeTime>
 		<Art>a_Upgrade_Barn_4</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1321,7 +1321,7 @@
 		<PlayerLevel>20</PlayerLevel>
 		<GoldCost>209646</GoldCost>
 		<IdolCost>55</IdolCost>
-		<UpgradeTime>259200</UpgradeTime>
+		<UpgradeTime>172800</UpgradeTime>
 		<Art>a_Upgrade_Barn_5</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1331,7 +1331,7 @@
 		<PlayerLevel>25</PlayerLevel>
 		<GoldCost>432172</GoldCost>
 		<IdolCost>85</IdolCost>
-		<UpgradeTime>343800</UpgradeTime>
+		<UpgradeTime>201600</UpgradeTime>
 		<Art>a_Upgrade_Barn_6</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1341,7 +1341,7 @@
 		<PlayerLevel>30</PlayerLevel>
 		<GoldCost>835058</GoldCost>
 		<IdolCost>123</IdolCost>
-		<UpgradeTime>439200</UpgradeTime>
+		<UpgradeTime>230400</UpgradeTime>
 		<Art>a_Upgrade_Barn_7</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1351,7 +1351,7 @@
 		<PlayerLevel>35</PlayerLevel>
 		<GoldCost>1539532</GoldCost>
 		<IdolCost>158</IdolCost>
-		<UpgradeTime>634800</UpgradeTime>
+		<UpgradeTime>259200</UpgradeTime>
 		<Art>a_Upgrade_Barn_8</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1361,7 +1361,7 @@
 		<PlayerLevel>40</PlayerLevel>
 		<GoldCost>2748303</GoldCost>
 		<IdolCost>198</IdolCost>
-		<UpgradeTime>715200</UpgradeTime>
+		<UpgradeTime>302400</UpgradeTime>
 		<Art>a_Upgrade_Barn_9</Art>
 		<UpgradeDescription>Azami evcil seviyesini 2 artirir</UpgradeDescription>
 	</Building>
@@ -1371,7 +1371,7 @@
 		<PlayerLevel>45</PlayerLevel>
 		<GoldCost>4781913</GoldCost>
 		<IdolCost>239</IdolCost>
-		<UpgradeTime>1024200</UpgradeTime>
+		<UpgradeTime>345600</UpgradeTime>
 		<Art>a_Upgrade_Barn_Final</Art>
 	</Building>
 </BuildingTypes>
